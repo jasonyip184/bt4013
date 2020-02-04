@@ -1,0 +1,55 @@
+Country,Category,Code
+United States,ADP Employment Change,USA_ADP
+United States,Average Hourly Earnings,USA_EARN
+United States,Average Weekly Hours,USA_HRS
+United States,Balance of Trade,USA_BOT
+United States,Business Confidence,USA_BC
+United States,Business Inventories,USA_BI
+United States,Capacity Utilization,USA_CU
+United States,Capital Flows,USA_CF
+United States,Challenger Job Cuts,USA_CHJC
+United States,Chicago Fed National Activity Index,USA_CFNAI
+United States,Chicago Pmi,USA_CP
+United States,Consumer Credit,USA_CCR
+United States,Consumer Price Index CPI,USA_CPI
+United States,Core Consumer Prices,USA_CCPI
+United States,Core Inflation Rate,USA_CINF
+United States,Dallas Fed Manufacturing Index ,USA_DFMI
+United States,Durable Goods Orders,USA_DUR
+United States,Durable Goods Orders Ex Transportation,USA_DURET
+United States,Export Prices,USA_EXPX
+United States,Exports,USA_EXVOL
+United States,Factory Orders Ex Transportation,USA_FRET
+United States,Foreign Bond Investment,USA_FBI
+United States,Government Budget Value,USA_GBVL
+United States,Government Payrolls,USA_GPAY
+United States,Housing Index,USA_HI
+United States,Import Prices,USA_IMPX
+United States,Imports,USA_IMVOL
+United States,Industrial Production,USA_IP
+United States,Industrial Production Mom,USA_IPMOM
+United States,Inflation Rate,USA_CPIC
+United States,Inflation Rate Mom,USA_CPICM
+United States,Job Offers,USA_JBO
+United States,Labor Force Participation Rate,USA_LFPR
+United States,Leading Economic Index,USA_LEI
+United States,Manufacturing Payrolls,USA_MPAY
+United States,Manufacturing Production,USA_MP
+United States,Nahb Housing Market Index,USA_NAHB
+United States,Net Long Term Tic Flows,USA_NLTTF
+United States,NFIB Business Optimism Index,USA_NFIB
+United States,Non Farm Payrolls,USA_NFP
+United States,Non Manufacturing PMI,USA_NMPMI
+United States,Nonfarm Payrolls Private,USA_NPP
+United States,NY Empire State Manufacturing Index,USA_EMPST
+United States,Pending Home Sales,USA_PHS
+United States,Philadelphia Fed Manufacturing Index,USA_PFED
+United States,Producer Prices,USA_PP
+United States,Producer Prices Change,USA_PPIC
+United States,Retail Sales MoM,USA_RSM
+United States,Retail Sales YoY,USA_RSY
+United States,Retail Sales Ex Autos,USA_RSEA
+United States,Richmond Fed Manufacturing Index ,USA_RFMI
+United States,Total Vehicle Sales,USA_TVS
+United States,Unemployment Rate,USA_UNR
+United States,Wholesale Inventories,USA_WINV
