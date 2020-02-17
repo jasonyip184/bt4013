@@ -1,7 +1,6 @@
-### Quantiacs Trend Following Trading System Example
 import numpy as np
 from sklearn.linear_model import LinearRegression
-from indicators import SMA, EMA, RSI, StochOsc
+from indicators import ADI, ADX, BB, CCI, EMA, OBV, RSI, SMA, StochOsc, StochRSI, UltiOsc, WilliamsR
 
 
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
@@ -48,25 +47,47 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
             latest_CLOSE = CLOSE[i][-1]
 
             '''
-            SMA crosses
+            ################ TREND FOLOWING ################
+            '''
+            '''
+            Simple Moving Average (SMA) crosses, period 5,10,20,50,100,200
             '''
             # indicators
             SMA5s = SMA(CLOSE[i], 5)
-            SMA10 = SMA(CLOSE[i], 10)
-            SMA20 = SMA(CLOSE[i], 20)
-            SMA50 = SMA(CLOSE[i], 50)
-            SMA100 = SMA(CLOSE[i], 100)
-            SMA200 = SMA(CLOSE[i], 200)
+            SMA10s = SMA(CLOSE[i], 10)
+            SMA20s = SMA(CLOSE[i], 20)
+            SMA50s = SMA(CLOSE[i], 50)
+            SMA100s = SMA(CLOSE[i], 100)
+            SMA200s = SMA(CLOSE[i], 200)
             # signals
-            SMA5_cross_buy = SMA5 > latest_CLOSE
-            SMA10_cross_buy = SMA10 > latest_CLOSE
-            SMA20_cross_buy = SMA20 > latest_CLOSE
-            SMA50_cross_buy = SMA50 > latest_CLOSE
-            SMA100_cross_buy = SMA100 > latest_CLOSE
-            SMA200_cross_buy = SMA200 > latest_CLOSE
+            SMA5_cross_buy = SMA5_cross_sell = SMA10_cross_buy = SMA10_cross_sell = SMA20_cross_buy = SMA20_cross_sell = SMA50_cross_buy = SMA50_cross_sell = SMA100_cross_buy = SMA100_cross_sell = SMA200_cross_buy = SMA200_cross_sell = False
+            if (latest_CLOSE > SMA5s[-1]) and (CLOSE[i][-2] <= SMA5s[-2]):
+                SMA5_cross_buy = True
+            elif (latest_CLOSE < SMA5s[-1]) and (CLOSE[i][-2] >= SMA5s[-2]):
+                SMA5_cross_sell = True
+            if (latest_CLOSE > SMA10s[-1]) and (CLOSE[i][-2] <= SMA10s[-2]):
+                SMA10_cross_buy = True
+            elif (latest_CLOSE < SMA10s[-1]) and (CLOSE[i][-2] >= SMA10s[-2]):
+                SMA10_cross_sell = True
+            if (latest_CLOSE > SMA20s[-1]) and (CLOSE[i][-2] <= SMA20s[-2]):
+                SMA20_cross_buy = True
+            elif (latest_CLOSE < SMA20s[-1]) and (CLOSE[i][-2] >= SMA20s[-2]):
+                SMA20_cross_sell = True
+            if (latest_CLOSE > SMA50s[-1]) and (CLOSE[i][-2] <= SMA50s[-2]):
+                SMA50_cross_buy = True
+            elif (latest_CLOSE < SMA50s[-1]) and (CLOSE[i][-2] >= SMA50s[-2]):
+                SMA50_cross_sell = True
+            if (latest_CLOSE > SMA100s[-1]) and (CLOSE[i][-2] <= SMA100s[-2]):
+                SMA100_cross_buy = True
+            elif (latest_CLOSE < SMA100s[-1]) and (CLOSE[i][-2] >= SMA100s[-2]):
+                SMA100_cross_sell = True
+            if (latest_CLOSE > SMA200s[-1]) and (CLOSE[i][-2] <= SMA200s[-2]):
+                SMA200_cross_buy = True
+            elif (latest_CLOSE < SMA200s[-1]) and (CLOSE[i][-2] >= SMA200s[-2]):
+                SMA200_cross_sell = True
 
             '''
-            EMA crosses
+            Exponential Moving Average (EMA) crosses, period 5,10,20,50,100,200
             '''
             # indicators
             EMA5s = EMA(CLOSE[i], 5)
@@ -76,60 +97,210 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
             EMA100s = EMA(CLOSE[i], 100)
             EMA200s = EMA(CLOSE[i], 200)
             # signals
-            EMA5_cross_buy = EMA5s[-1] > latest_CLOSE
-            EMA10_cross_buy = EMA10s[-1] > latest_CLOSE
-            EMA20_cross_buy = EMA20s[-1] > latest_CLOSE
-            EMA50_cross_buy = EMA50s[-1] > latest_CLOSE
-            EMA100_cross_buy = EMA100s[-1] > latest_CLOSE
-            EMA200_cross_buy = EMA200s[-1] > latest_CLOSE
+            EMA5_cross_buy = EMA5_cross_sell = EMA10_cross_buy = EMA10_cross_sell = EMA20_cross_buy = EMA20_cross_sell = EMA50_cross_buy = EMA50_cross_sell = EMA100_cross_buy = EMA100_cross_sell = EMA200_cross_buy = EMA200_cross_sell = False
+            if (latest_CLOSE > EMA5s[-1]) and (CLOSE[i][-2] <= EMA5s[-2]):
+                EMA5_cross_buy = True
+            elif (latest_CLOSE < EMA5s[-1]) and (CLOSE[i][-2] >= EMA5s[-2]):
+                EMA5_cross_sell = True
+            if (latest_CLOSE > EMA10s[-1]) and (CLOSE[i][-2] <= EMA10s[-2]):
+                EMA10_cross_buy = True
+            elif (latest_CLOSE < EMA10s[-1]) and (CLOSE[i][-2] >= EMA10s[-2]):
+                EMA10_cross_sell = True
+            if (latest_CLOSE > EMA20s[-1]) and (CLOSE[i][-2] <= EMA20s[-2]):
+                EMA20_cross_buy = True
+            elif (latest_CLOSE < EMA20s[-1]) and (CLOSE[i][-2] >= EMA20s[-2]):
+                EMA20_cross_sell = True
+            if (latest_CLOSE > EMA50s[-1]) and (CLOSE[i][-2] <= EMA50s[-2]):
+                EMA50_cross_buy = True
+            elif (latest_CLOSE < EMA50s[-1]) and (CLOSE[i][-2] >= EMA50s[-2]):
+                EMA50_cross_sell = True
+            if (latest_CLOSE > EMA100s[-1]) and (CLOSE[i][-2] <= EMA100s[-2]):
+                EMA100_cross_buy = True
+            elif (latest_CLOSE < EMA100s[-1]) and (CLOSE[i][-2] >= EMA100s[-2]):
+                EMA100_cross_sell = True
+            if (latest_CLOSE > EMA200s[-1]) and (CLOSE[i][-2] <= EMA200s[-2]):
+                EMA200_cross_buy = True
+            elif (latest_CLOSE < EMA200s[-1]) and (CLOSE[i][-2] >= EMA200s[-2]):
+                EMA200_cross_sell = True
 
             '''
-            RSI - momentum oscillator
-            Signals from https://www.babypips.com/learn/forex/relative-strength-index
+            Average Directional Movement Index (ADX), period 14
+            '''
+            # indicators
+            mDIs, pDIs, ADXs = ADX(HIGH[i], LOW[i], CLOSE[i], 14)
+            # signals
+            ADX_bullish_cross = ADX_bearish_cross = False
+            # Bullish strong trend cross
+            if (ADXs[-1] > 25) and (pDIs[-1] > mDIs[-1]) and (pDIs[-2] <= mDIs[-2]):
+                ADX_bullish_cross = True
+            # Bearish strong trend cross
+            elif (ADXs[-1] > 25) and (pDIs[-1] < mDIs[-1]) and (pDIs[-2] >= mDIs[-2]):
+                ADX_bearish_cross = True
+
+            '''
+            Moving Average Convergence Divergence (MACD) fast=12, slow=26
+            '''
+            # indicator
+            EMA12s = EMA(CLOSE[i], 12)
+            EMA26s = EMA(CLOSE[i], 26)
+            MACDs = [(a_i - b_i) if b_i is not None else None for a_i, b_i in zip(EMA12s, EMA26s)]
+            # signals
+            MACD_bullish_zero_cross = MACD_bearish_zero_cross = False
+            # Bullish zero cross which sustains for 3 days (reduce false signals)
+            if (MACDs[-5] <= 0) and (MACDs[-4] > 0) and (MACDs[-3] > 0) and (MACDs[-2] > 0) and (MACDs[-1] > 0):
+                MACD_bullish_zero_cross = True
+            # Bearish zero cross
+            elif (MACDs[-5] >= 0) and (MACDs[-4] < 0) and (MACDs[-3] < 0) and (MACDs[-2] < 0) and (MACDs[-1] < 0):
+                MACD_bearish_zero_cross = True
+
+            '''
+            Commodity Channel Index (CCI), period 14
+            '''
+            # indicator
+            CCIs = CCI(HIGH[i], LOW[i], CLOSE[i], 14)
+            # signals
+            CCI_emerging_bull = CCI_emerging_bear = False
+            # emerging bull
+            if CCIs[-1] > 100:
+                CCI_emerging_bull = True
+            # emerging bear
+            elif CCIs[-1] < -100:
+                CCI_emerging_bear = True
+
+            '''
+            ################ MOMENTUM ################
+            '''
+            '''
+            Relative Strength Index (RSI), period 14
             '''
             # indicator
             RSIs = RSI(CLOSE[i])
             # signals
-            RSI_oversold_in_uptrend = RSI_overbought_in_downtrend = RSI_rising_centerline_crossover = RSI_falling_centerline_crossover = False
-            # Uptrend and cross 30 to become oversold
-            if (latest_CLOSE > SMA200) and (RSIs[-2] >= 30) and (RSIs[-1] < 30):
+            RSI_oversold_in_uptrend = RSI_overbought_in_downtrend = RSI_rising_center_cross = RSI_falling_center_cross = False
+            # Uptrend and cross 30 to become oversold (Bullish)
+            if (latest_CLOSE > SMA200s[-1]) and (RSIs[-2] >= 30) and (RSIs[-1] < 30):
                 RSI_oversold_in_uptrend = True
-            # Downtrend and cross 70 to become overbought
-            elif (latest_CLOSE < SMA200) and (RSIs[-2] <= 70) and (RSIs[-1] > 30):
+            # Downtrend and cross 70 to become overbought (Bearish)
+            elif (latest_CLOSE < SMA200s[-1]) and (RSIs[-2] <= 70) and (RSIs[-1] > 30):
                 RSI_overbought_in_downtrend = True
-            # Rising centerline crossover
+            # Bullish center cross
             if (RSIs[-1] > 50) and (RSIs[-2] <= 50):
-                RSI_rising_centerline_crossover = True
-            # Falling centerline crossover
+                RSI_bullish_center_cross = True
+            # Bearish center cross
             elif (RSIs[-1] < 50) and (RSIs[-2] >= 50):
-                RSI_falling_centerline_crossover = True
+                RSI_bearish_center_cross = True
             
             '''
-            Stochastic Oscillator
-            https://school.stockcharts.com/doku.php?id=technical_indicators:stochastic_oscillator_fast_slow_and_full
+            Stochastic Oscillator, fast 14, slow 3
             '''
             # indicators
             Ks, Ds = StochOsc(CLOSE[i], HIGH[i], LOW[i], 14, 3)
             # signals
-            stochastic_bullish_crossover = stochastic_bearish_crossover = stochastic_bullish_divergence = stochastic_bearish_divergence = False
+            StochOsc_bullish_cross = StochOsc_bearish_cross = StochOsc_bullish_divergence = StochOsc_bearish_divergence = False
             # K (fast) cross D (slow) from below
             if (Ks[-2] <= Ds[-2]) and (Ks[-1] > Ds[-1]):
-                stochastic_bullish_crossover = True
+                StochOsc_bullish_cross = True
             # K (fast) cross D (slow) from above
             elif (Ks[-2] >= Ds[-2]) and (Ks[-1] < Ds[-1]):
-                stochastic_bearish_crossover = True
+                StochOsc_bearish_cross = True
             # Bullish divergence
             if (LOW[i][-1] < LOW[i][-2]) and (Ks[-1] >= Ks[-2]):
-                stochastic_bullish_divergence = True
+                StochOsc_bullish_divergence = True
             # Bearish divergence
             elif (HIGH[i][-1] > HIGH[i][-2]) and (Ks[-1] <= Ks[-2]):
-                stochastic_bearish_divergence = True
+                StochOsc_bearish_divergence = True
 
             '''
-            Stochastic RSI
-            https://www.investopedia.com/terms/s/stochrsi.asp
+            Stochastic RSI 14 period
             '''
+            # indicator
+            StochRSIs = StochRSI(RSIs, 14)
+            # signals
+            StochRSI_bullish_center_cross = StochRSI_bearish_center_cross = False
+            # Bullish center cross
+            if (StochRSIs[-1] > 50) and (StochRSIs[-2] <= 50):
+                StochRSI_bullish_center_cross = True
+            # Bearish center cross
+            elif (StochRSIs[-1] < 50) and (StochRSIs[-2] >= 50):
+                StochRSI_bearish_center_cross = True
 
+            '''
+            Williams %R, 14 period
+            '''
+            # indicator
+            WilliamsRs = WilliamsR(HIGH[i], LOW[i], CLOSE[i])
+            # signals
+            WilliamsR_bullish_center_cross = WilliamsR_bearish_center_cross = False
+            # Bullish center cross & price action
+            if (WilliamsRs[-2] <= -50) and (WilliamsRs[-1] > -50) and (CLOSE[i][-1] > CLOSE[i][-2]):
+                WilliamsR_bullish_center_cross = True
+            # Bearish center cross & price action
+            elif (WilliamsRs[-2] >= -50) and (WilliamsRs[-1] < -50) and (CLOSE[i][-1] < CLOSE[i][-2]):
+                WilliamsR_bearish_center_cross = True
+            
+            ''' 
+            Ultimate Oscillator, periods 20,40,80
+            '''
+            # indicator
+            UltiOscs = UltiOsc(HIGH[i], LOW[i], CLOSE[i], 20, 40, 80)
+            # signals
+            UltiOsc_bullish_center_cross = UltiOsc_bearish_center_cross = False
+            # Bullish center cross
+            if (UltiOscs[-1] > 50) and (UltiOscs[-2] <= 50):
+                UltiOsc_bullish_center_cross = True
+            # Bearish center cross
+            elif (UltiOscs[-1] < 50) and (UltiOscs[-2] >= 50):
+                UltiOsc_bearish_center_cross = True
+
+            '''
+            ################ VOLUME ################
+            '''
+            '''
+            Accumulation / Distribution Index (ADI)
+            '''
+            # indicator
+            ADIs = ADI(HIGH[i], LOW[i], CLOSE[i], VOL[i])
+            # signals
+            ADI_bullish_reversal = ADI_bearish_reversal = ADI_bullish_trend_confo = ADI_bearish_trend_confo = False
+            # Foreshadowing bullish reversal
+            if (HIGH[i][-1] < HIGH[i][-2]) and (ADIs[-1] > ADIs[-2]):
+                ADI_bullish_reversal = True
+            # Foreshadowing bearish reversal
+            elif (HIGH[i][-1] > HIGH[i][-2]) and (ADIs[-1] < ADIs[-2]):
+                ADI_bearish_reversal = True
+            # bullish trend confirmation
+            if (latest_CLOSE > CLOSE[i][-2]) and (ADIs[-1] > ADIs[-2]):
+                ADI_bullish_trend_confo = True
+            # bearish trend confirmation
+            elif (latest_CLOSE < CLOSE[i][-2]) and (ADIs[-1] < ADIs[-2]):
+                ADI_bearish_trend_confo = True
+            
+            '''
+            On-Balance Volume (OBV)
+            '''
+            # indicator
+            OBVs = OBV(CLOSE[i], VOL[i])
+            # signals
+            OBV_bullish_trend_confo = OBV_bearish_trend_confo = False
+            if (OBVs[-1] > OBVs[-2]) and (OBVs[-2] > OBVs[-3]):
+                OBV_bullish_trend_confo = True
+            elif (OBVs[-1] < OBVs[-2]) and (OBVs[-2] < OBVs[-3]):
+                OBV_bearish_trend_confo = True
+
+            '''
+            ################ VOLATILITY ################
+            '''
+            ''' 
+            Bollinger Bands (BB), 20 period
+            '''
+            # indicator + signal
+            BB_high_crosses, BB_low_crosses = BB(CLOSE[i], 20)
+            BB_bullish_reversal = BB_bearish_reversal = False
+            if BB_high_crosses[-1] == 1:
+                BB_bearish_reversal = True
+            elif BB_low_crosses[-1] == 1:
+                BB_bullish_reversal = True
+            print(BB_bullish_reversal, BB_bearish_reversal)
             break
 
         # pos[longEquity] = 1 
