@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from indicators import ADI, ADX, BB, CCI, EMA, OBV, RSI, SMA, StochOsc, StochRSI, UltiOsc, WilliamsR
+from economic_indicators import econ_long_short_allocation, market_factor_weights
 
 
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
@@ -10,6 +11,9 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
     nMarkets = CLOSE.shape[1]
     lookback = settings['lookback']
     pos = np.zeros(nMarkets)
+    markets = settings['markets']
+    w = settings['market_factor_weights']
+    lweights, sweights = econ_long_short_allocation(markets, DATE[0], DATE[-1], w, activate=settings['dynamic_portfolio_allocation'])
 
     # to understand how this system works
     print("Using data from {} onwards to predict/take position in {}".format(DATE[0],DATE[-1]))
@@ -264,16 +268,17 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
         ################ VOLATILITY ################
         Bollinger Bands (BB), 20 period
         '''
-        # # indicator + signal
-        # # bb[0] = BB_high_crosses, bb[1] = BB_low_crosses
-        # BBs = [BB(close, 20) for close in CLOSE]
-        # BB_bullish_reversal = [True if bb[1][-1] == 1 else False for bb in BBs]
-        # BB_bearish_reversal = [True if bb[0][-1] == 1 else False for bb in BBs]
+        # indicator + signal
+        # bb[0] = BB_high_crosses, bb[1] = BB_low_crosses
+        BBs = [BB(close, 20) for close in CLOSE]
+        BB_bullish_reversal = [True if bb[1][-1] == 1 else False for bb in BBs]
+        BB_bearish_reversal = [True if bb[0][-1] == 1 else False for bb in BBs]
 
         '''
         Execution
         '''
         for i in range(0, nMarkets-1):
+            future_name = markets[i+1]
             # # Trend following
             # # 'sharpe': -4.9505, 'sortino': -6.6969, 'returnYearly': -0.24064, 'volaYearly': 0.048608
             # # short - 'sharpe': -0.3336, 'sortino': -0.5194, 'returnYearly': -0.0098, 'volaYearly': 0.0293
@@ -398,14 +403,18 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
             # elif BB_bearish_reversal[i] == True:
             #     pos[i+1] = -1
 
-            # # Trend-following
-            # # 'sharpe': 7.7099, 'sortino': 22.036, 'returnYearly': 0.6505, 'volaYearly': 0.08437
-            # # short - 'sharpe': 8.5076, 'sortino': 27.5326, 'returnYearly': 0.5654, 'volaYearly': 0.0665
-            # # avg longs per day: 7.391 , avg shorts per day: 7.565
-            # if BB_bullish_reversal[i] == True:
-            #     pos[i+1] = -1
-            # elif BB_bearish_reversal[i] == True:
-            #     pos[i+1] = 1
+            # Trend-following
+            # 'sharpe': 7.7099, 'sortino': 22.036, 'returnYearly': 0.6505, 'volaYearly': 0.08437
+            # short - 'sharpe': 8.5076, 'sortino': 27.5326, 'returnYearly': 0.5654, 'volaYearly': 0.0665
+            # avg longs per day: 7.391 , avg shorts per day: 7.565
+            # with portfolio allocation...
+            # 'sharpe': 'sharpe': 8.536, 'sortino': 26.050, 'returnYearly': 0.6896, 'volaYearly': 0.08078
+            # short - 'sharpe': 9.2273, 'sortino': 30.2474, 'returnYearly': 0.5888, 'volaYearly': 0.0635
+            # avg longs per day: 7.348 , avg shorts per day: 7.391
+            if BB_bullish_reversal[i] == True:
+                pos[i+1] = sweights[future_name]
+            elif BB_bearish_reversal[i] == True:
+                pos[i+1] = lweights[future_name]
             
 
 
@@ -413,17 +422,14 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
         pass
 
     # check if latest economic data suggests downturn then activate short only strats 
-
+    # print(pos)
     if np.nansum(pos) > 0:
-        weights = pos / np.nansum(abs(pos))
-    else:
-        weights = pos
+        pos = pos / np.nansum(abs(pos))
 
-    settings['longs'] = settings['longs'] + list(pos).count(1)
-    settings['shorts'] = settings['shorts'] + list(pos).count(-1)
+    settings['longs'] = settings['longs'] + sum(1 for x in pos if x > 0)
+    settings['shorts'] = settings['shorts'] + sum(1 for x in pos if x < 0)
     settings['days'] = settings['days'] + 1
-    print(pos)
-    return weights, settings
+    return pos, settings
 
 
 def mySettings():
@@ -436,10 +442,13 @@ def mySettings():
     lookback = 504 # 504
     beginInSample = '20180119' # '20180119'
     endInSample = None # None # taking the latest available
+    dynamic_portfolio_allocation = True # activate=False to set even allocation for all futures and even for long/short
+    if dynamic_portfolio_allocation:
+        mfw = market_factor_weights(markets)
 
     settings = {'markets': markets, 'beginInSample': beginInSample, 'endInSample': endInSample, 'lookback': lookback,
-                'budget': budget, 'slippage': slippage, 'model': model, 'longs':0, 'shorts':0, 'days':0}
-
+                'budget': budget, 'slippage': slippage, 'model': model, 'longs':0, 'shorts':0, 'days':0,
+                'dynamic_portfolio_allocation':dynamic_portfolio_allocation, 'market_factor_weights':mfw}
     return settings
 
 
