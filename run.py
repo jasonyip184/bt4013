@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 from indicators import ADI, ADX, BB, CCI, EMA, OBV, RSI, SMA, StochOsc, StochRSI, UltiOsc, WilliamsR
 from economic_indicators import econ_long_short_allocation, market_factor_weights
+from model import train_lgb_model, get_lgb_prediction
 
 
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
@@ -47,6 +48,16 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
             else:
                 pos[i+1] = -1
         print("Today's position in the 88 futures:", pos)
+
+    elif settings['model'] == 'LIGHTGBM':
+        for i in range(0, nMarkets-1):
+            feature_ADI = ADI(HIGH[i], LOW[i], CLOSE[i], VOL[i])
+            feature_WilliamsR = WilliamsR(HIGH[i], LOW[i], CLOSE[i])
+            features = np.array([[OPEN[i][-1], HIGH[i][-1], LOW[i][-1], CLOSE[i][-1], VOL[i][-1], feature_ADI[-1], feature_WilliamsR[-1], CLOSE[i][-2], CLOSE[i][-3]]])
+            model_dir = f'./model_pickle_files/{markets[i]}_model'
+            prediction = get_lgb_prediction(model_dir, features)[0]
+            pos[i+1] = prediction
+        print(f"Today's position in the {len(markets)} futures: {pos}")
 
     elif settings['model'] == 'TA_multifactor':
         '''
@@ -435,10 +446,12 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
 def mySettings():
     settings = {}
     # markets  = ['CASH','F_AD','F_BO']
-    markets  = ['CASH', 'F_AD','F_BO','F_BP','F_C','F_CC','F_CD','F_CL','F_CT','F_DX','F_EC','F_ED','F_ES','F_FC','F_FV','F_GC','F_HG','F_HO','F_JY','F_KC','F_LB','F_LC','F_LN','F_MD','F_MP','F_NG','F_NQ','F_NR','F_O','F_OJ','F_PA','F_PL','F_RB','F_RU','F_S','F_SB','F_SF','F_SI','F_SM','F_TU','F_TY','F_US','F_W','F_XX','F_YM','F_AX','F_CA','F_DT','F_UB','F_UZ','F_GS','F_LX','F_SS','F_DL','F_ZQ','F_VX','F_AE','F_BG','F_BC','F_LU','F_DM','F_AH','F_CF','F_DZ','F_FB','F_FL','F_FM','F_FP','F_FY','F_GX','F_HP','F_LR','F_LQ','F_ND','F_NY','F_PQ','F_RR','F_RF','F_RP','F_RY','F_SH','F_SX','F_TR','F_EB','F_VF','F_VT','F_VW','F_GD','F_F']
+    markets = ['F_ED', 'F_F', 'F_EB', 'F_ZQ', 'F_UZ', 'F_VW', 'F_SS'] # for LightGBM
+    # markets  = ['CASH', 'F_AD','F_BO','F_BP','F_C','F_CC','F_CD','F_CL','F_CT','F_DX','F_EC','F_ED','F_ES','F_FC','F_FV','F_GC','F_HG','F_HO','F_JY','F_KC','F_LB','F_LC','F_LN','F_MD','F_MP','F_NG','F_NQ','F_NR','F_O','F_OJ','F_PA','F_PL','F_RB','F_RU','F_S','F_SB','F_SF','F_SI','F_SM','F_TU','F_TY','F_US','F_W','F_XX','F_YM','F_AX','F_CA','F_DT','F_UB','F_UZ','F_GS','F_LX','F_SS','F_DL','F_ZQ','F_VX','F_AE','F_BG','F_BC','F_LU','F_DM','F_AH','F_CF','F_DZ','F_FB','F_FL','F_FM','F_FP','F_FY','F_GX','F_HP','F_LR','F_LQ','F_ND','F_NY','F_PQ','F_RR','F_RF','F_RP','F_RY','F_SH','F_SX','F_TR','F_EB','F_VF','F_VT','F_VW','F_GD','F_F']
     budget = 1000000
     slippage = 0.05
-    model = 'TA_multifactor' # trend_following, MLR_CLOSE, TA_multifactor
+    # model = 'TA_multifactor' # trend_following, MLR_CLOSE, TA_multifactor
+    model = 'LIGHTGBM'
     lookback = 504 # 504
     beginInSample = '20180119' # '20180119'
     endInSample = None # None # taking the latest available
