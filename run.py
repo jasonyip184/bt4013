@@ -3,6 +3,10 @@ from sklearn.linear_model import LinearRegression
 from indicators import ADI, ADX, BB, CCI, EMA, OBV, RSI, SMA, StochOsc, StochRSI, UltiOsc, WilliamsR
 from economic_indicators import econ_long_short_allocation, market_factor_weights
 from model import train_lgb_model, get_lgb_prediction
+from scipy.stats import pearsonr
+from statistics import stdev 
+from utils import clean
+
 
 
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
@@ -426,8 +430,74 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
                 pos[i+1] = sweights[future_name]
             elif BB_bearish_reversal[i] == True:
                 pos[i+1] = lweights[future_name]
-            
+        
+    elif settings['model'] == 'Pair_trade':
+        '''
+        Pairwise correlation, taking position based on the greatest variation from
+        average of the past 50 periods of 50 days
+        '''
+        # 'sharpe': -8.6373, 'sortino': -9.7389, 'returnYearly': -0.2444, 'volaYearly': 0.02830, 
+        d = {} ##Name of future : Close of all 88 futures
+        names = []  ##names of all 88 future
+        for i in range(0, nMarkets-1):
+            n = markets[i+1]
+            names.append(n)
+            d[n] = (CLOSE[i])
+        d_corr = {} ##key = tuple of 2 futures: value = (corr, pval) where corr >= 0.7
+        for i in range (len(names)):
+            for k in range (i+1,len(names)):
+                tup = (names[i],names[k])
+                l1 = d[names[i]][-250:]
+                l2 = d[names[k]][-250:]
+                cor = pearsonr(l1,l2)
+                if abs(cor[0]) > 0.7:
+                    d_corr[tup] = cor
+        d_avgCor = {} ## key = tuple of name of 2 futures , value = tuple of [avg of 50 cor, sd of 50 cor]
+        for k in list(d_corr.keys()):
+            f = k[0]
+            s = k[1]
+            l1 = d[f][-101:-2]
+            l2 = d[s][-101:-2]
+            ls = []
+            for i in range (50): 
+                x = pearsonr(l1[i:i+50],l2[i:i+50])
+                ls.append(x[0])
+            avg_corr = sum(ls)/len(ls)
+            sd_corr = stdev(ls)
+            d_avgCor[k] = (avg_corr,sd_corr)
 
+        ## key = tuple of name of 2 futures, value = position to take for ((future1,future2),difference)
+        d_position = {}
+        for i in list(d_corr.keys()):
+            f = i[0]
+            s = i[1]
+            tup = d_avgCor[i]
+            l1 = d[f][-49:-1] ##take last 50 close
+            l2 = d[s][-49:-1] ##take last 50 close
+            corr , _ = pearsonr(l1,l2)
+            change_f = d[f][-2] - d[f][-3]
+            change_s = d[s][-2] - d[s][-3]
+            diff = abs(tup[0] - corr) 
+            if diff > tup[1] :
+                if change_f > change_s :
+                    d_position[i] = ((-1,1),diff) ##assuming -1 means short while 1 means long
+                elif change_s > change_f :
+                    d_position[i] = ((1,-1),diff)
+                else:
+                    d_position[i] = ((0,0),diff) ##else dont take any position?
+        
+        for i in range (len(names)): ##find position based on greatest variation
+            diff = 0
+            pair = tuple()
+            name = names[i]
+            for k in list(d_position.keys()):
+                if name in k:
+                    if d_position[k][1] > diff:
+                        diff = d_position[k][1]
+                        if i == k[0]:
+                            pos[i+1] = d_position[k][0][0]
+                        else:
+                            pos[i+1] = d_position[k][0][1]
 
     elif settings['model'] == 'ANOTHER MODEL':
         pass
@@ -446,18 +516,21 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
 def mySettings():
     settings = {}
     # markets  = ['CASH','F_AD','F_BO']
-    markets = ['F_ED', 'F_F', 'F_EB', 'F_ZQ', 'F_UZ', 'F_VW', 'F_SS'] # for LightGBM
-    # markets  = ['CASH', 'F_AD','F_BO','F_BP','F_C','F_CC','F_CD','F_CL','F_CT','F_DX','F_EC','F_ED','F_ES','F_FC','F_FV','F_GC','F_HG','F_HO','F_JY','F_KC','F_LB','F_LC','F_LN','F_MD','F_MP','F_NG','F_NQ','F_NR','F_O','F_OJ','F_PA','F_PL','F_RB','F_RU','F_S','F_SB','F_SF','F_SI','F_SM','F_TU','F_TY','F_US','F_W','F_XX','F_YM','F_AX','F_CA','F_DT','F_UB','F_UZ','F_GS','F_LX','F_SS','F_DL','F_ZQ','F_VX','F_AE','F_BG','F_BC','F_LU','F_DM','F_AH','F_CF','F_DZ','F_FB','F_FL','F_FM','F_FP','F_FY','F_GX','F_HP','F_LR','F_LQ','F_ND','F_NY','F_PQ','F_RR','F_RF','F_RP','F_RY','F_SH','F_SX','F_TR','F_EB','F_VF','F_VT','F_VW','F_GD','F_F']
+    #markets = ['F_ED', 'F_F', 'F_EB', 'F_ZQ', 'F_UZ', 'F_VW', 'F_SS'] # for LightGBM
+    markets  = ['CASH', 'F_AD','F_BO','F_BP','F_C','F_CC','F_CD','F_CL','F_CT','F_DX','F_EC','F_ED','F_ES','F_FC','F_FV','F_GC','F_HG','F_HO','F_JY','F_KC','F_LB','F_LC','F_LN','F_MD','F_MP','F_NG','F_NQ','F_NR','F_O','F_OJ','F_PA','F_PL','F_RB','F_RU','F_S','F_SB','F_SF','F_SI','F_SM','F_TU','F_TY','F_US','F_W','F_XX','F_YM','F_AX','F_CA','F_DT','F_UB','F_UZ','F_GS','F_LX','F_SS','F_DL','F_ZQ','F_VX','F_AE','F_BG','F_BC','F_LU','F_DM','F_AH','F_CF','F_DZ','F_FB','F_FL','F_FM','F_FP','F_FY','F_GX','F_HP','F_LR','F_LQ','F_ND','F_NY','F_PQ','F_RR','F_RF','F_RP','F_RY','F_SH','F_SX','F_TR','F_EB','F_VF','F_VT','F_VW','F_GD','F_F']
     budget = 1000000
     slippage = 0.05
     # model = 'TA_multifactor' # trend_following, MLR_CLOSE, TA_multifactor
-    model = 'LIGHTGBM'
+    model = 'Pair_trade'
     lookback = 504 # 504
     beginInSample = '20180119' # '20180119'
     endInSample = None # None # taking the latest available
-    dynamic_portfolio_allocation = True # activate=False to set even allocation for all futures and even for long/short
+    dynamic_portfolio_allocation = False # activate=False to set even allocation for all futures and even for long/short
+    #clean()
     if dynamic_portfolio_allocation:
         mfw = market_factor_weights(markets)
+    else:
+        mfw = None
 
     settings = {'markets': markets, 'beginInSample': beginInSample, 'endInSample': endInSample, 'lookback': lookback,
                 'budget': budget, 'slippage': slippage, 'model': model, 'longs':0, 'shorts':0, 'days':0,
