@@ -432,6 +432,10 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
                 pos[i+1] = lweights[future_name]
         
     elif settings['model'] == 'Pair_trade':
+        '''
+        Pairwise correlation, taking position based on the greatest variation from
+        average of the past 50 periods of 50 days
+        '''
         # 'sharpe': -8.6373, 'sortino': -9.7389, 'returnYearly': -0.2444, 'volaYearly': 0.02830, 
         d = {} ##Name of future : Close of all 88 futures
         names = []  ##names of all 88 future
