@@ -436,69 +436,64 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
         Pairwise correlation, taking position based on the greatest variation from
         average of the past 50 periods of 50 days
         '''
-        # 'sharpe': -8.6373, 'sortino': -9.7389, 'returnYearly': -0.2444, 'volaYearly': 0.02830, 
+       #'sharpe': -5.439, 'sortino': -7.069, 'returnYearly': -0.4104, 'volaYearly': 0.07545 
         d = {} ##Name of future : Close of all 88 futures
         names = []  ##names of all 88 future
         for i in range(0, nMarkets-1):
             n = markets[i+1]
             names.append(n)
             d[n] = (CLOSE[i])
-        d_corr = {} ##key = tuple of 2 futures: value = (corr, pval) where corr >= 0.7
+        d_corr = {} ##key = tuple of 2 futures: value = (corr, pval) where corr >= 0.7 (historical)
+        temp = 0
+        highest_corr = tuple() ##highest_corr
+        val = 0 ##corr value
         for i in range (len(names)):
             for k in range (i+1,len(names)):
                 tup = (names[i],names[k])
-                l1 = d[names[i]][-250:]
-                l2 = d[names[k]][-250:]
+                l1 = d[names[i]][:-1]
+                l2 = d[names[k]][:-1]
                 cor = pearsonr(l1,l2)
                 if abs(cor[0]) > 0.7:
                     d_corr[tup] = cor
-        d_avgCor = {} ## key = tuple of name of 2 futures , value = tuple of [avg of 50 cor, sd of 50 cor]
-        for k in list(d_corr.keys()):
-            f = k[0]
-            s = k[1]
-            l1 = d[f][-101:-2]
-            l2 = d[s][-101:-2]
-            ls = []
-            for i in range (50): 
-                x = pearsonr(l1[i:i+50],l2[i:i+50])
-                ls.append(x[0])
-            avg_corr = sum(ls)/len(ls)
-            sd_corr = stdev(ls)
-            d_avgCor[k] = (avg_corr,sd_corr)
+                if cor[0] > temp:
+                    highest_corr = tup
+                    val = cor[0]
 
         ## key = tuple of name of 2 futures, value = position to take for ((future1,future2),difference)
         d_position = {}
         for i in list(d_corr.keys()):
             f = i[0]
             s = i[1]
-            tup = d_avgCor[i]
+            tup = d_corr[i]
             l1 = d[f][-49:-1] ##take last 50 close
             l2 = d[s][-49:-1] ##take last 50 close
             corr , _ = pearsonr(l1,l2)
-            change_f = d[f][-2] - d[f][-3]
-            change_s = d[s][-2] - d[s][-3]
-            diff = abs(tup[0] - corr) 
-            if diff > tup[1] :
+            change_f = d[f][-2] - d[f][-49]
+            change_s = d[s][-2] - d[s][-49]
+            diff = tup[0] - corr
+            if diff > 0.2:
                 if change_f > change_s :
                     d_position[i] = ((-1,1),diff) ##assuming -1 means short while 1 means long
-                elif change_s > change_f :
-                    d_position[i] = ((1,-1),diff)
                 else:
-                    d_position[i] = ((0,0),diff) ##else dont take any position?
+                    d_position[i] = ((1,-1),diff)
+
         
         for i in range (len(names)): ##find position based on greatest variation
             diff = 0
             pair = tuple()
             name = names[i]
+            counter = 0
             for k in list(d_position.keys()):
                 if name in k:
-                    if d_position[k][1] > diff:
-                        diff = d_position[k][1]
-                        if i == k[0]:
-                            pos[i+1] = d_position[k][0][0]
-                        else:
-                            pos[i+1] = d_position[k][0][1]
-
+                    counter+=1
+                    pair = k
+            if counter == 1:
+                if name == k[0]:
+                    pos[i+1] = d_position[k][0][0]
+                else:
+                    pos[i+1] = d_position[k][0][1]
+        #print(highest_corr,val)
+        
     elif settings['model'] == 'ANOTHER MODEL':
         pass
 
