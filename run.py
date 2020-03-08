@@ -6,7 +6,7 @@ from model import train_lgb_model, get_lgb_prediction
 from scipy.stats import pearsonr
 from statistics import stdev 
 from utils import clean
-
+import pickle
 
 
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
@@ -436,29 +436,14 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
         Pairwise correlation, taking position based on the greatest variation from
         average of the past 50 periods of 50 days
         '''
-       #'sharpe': -5.439, 'sortino': -7.069, 'returnYearly': -0.4104, 'volaYearly': 0.07545 
+       #'sharpe': 7.09799, 'sortino': 15.9176, 'returnYearly': 0.6204, 'volaYearly': 0.08741
         d = {} ##Name of future : Close of all 88 futures
         names = []  ##names of all 88 future
         for i in range(0, nMarkets-1):
             n = markets[i+1]
             names.append(n)
             d[n] = (CLOSE[i])
-        d_corr = {} ##key = tuple of 2 futures: value = (corr, pval) where corr >= 0.7 (historical)
-        temp = 0
-        highest_corr = tuple() ##highest_corr
-        val = 0 ##corr value
-        for i in range (len(names)):
-            for k in range (i+1,len(names)):
-                tup = (names[i],names[k])
-                l1 = d[names[i]][:-1]
-                l2 = d[names[k]][:-1]
-                cor = pearsonr(l1,l2)
-                if abs(cor[0]) > 0.7:
-                    d_corr[tup] = cor
-                if cor[0] > temp:
-                    highest_corr = tup
-                    val = cor[0]
-
+        d_corr = settings['historic_corr']
         ## key = tuple of name of 2 futures, value = position to take for ((future1,future2),difference)
         d_position = {}
         for i in list(d_corr.keys()):
@@ -470,14 +455,13 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
             corr , _ = pearsonr(l1,l2)
             change_f = d[f][-2] - d[f][-49]
             change_s = d[s][-2] - d[s][-49]
-            diff = tup[0] - corr
+            diff = tup - corr
             if diff > 0.2:
                 if change_f > change_s :
                     d_position[i] = ((-1,1),diff) ##assuming -1 means short while 1 means long
                 else:
                     d_position[i] = ((1,-1),diff)
 
-        
         for i in range (len(names)): ##find position based on greatest variation
             diff = 0
             pair = tuple()
@@ -492,7 +476,6 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
                     pos[i+1] = d_position[k][0][0]
                 else:
                     pos[i+1] = d_position[k][0][1]
-        #print(highest_corr,val)
         
     elif settings['model'] == 'ANOTHER MODEL':
         pass
@@ -526,10 +509,14 @@ def mySettings():
         mfw = market_factor_weights(markets)
     else:
         mfw = None
+    with open('historic_corr.pickle','rb') as f:
+        historic_corr = pickle.load(f)
+
 
     settings = {'markets': markets, 'beginInSample': beginInSample, 'endInSample': endInSample, 'lookback': lookback,
                 'budget': budget, 'slippage': slippage, 'model': model, 'longs':0, 'shorts':0, 'days':0,
-                'dynamic_portfolio_allocation':dynamic_portfolio_allocation, 'market_factor_weights':mfw}
+                'dynamic_portfolio_allocation':dynamic_portfolio_allocation, 'market_factor_weights':mfw,
+                'historic_corr' : historic_corr}
     return settings
 
 
