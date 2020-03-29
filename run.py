@@ -6,6 +6,8 @@ from model import train_lgb_model, get_lgb_prediction
 from scipy.stats import pearsonr
 from statistics import stdev 
 from utils import clean
+from fastdtw import fastdtw
+from scipy.spatial.distance import euclidean
 import pickle
 
 
@@ -473,15 +475,66 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
                     pair = k
             if counter == 1:
                 if name == k[0]:
-                    pos[i+1] = d_position[k][0][0]
+                    if d_position[k][0][0] > 0:
+                        pos[i+1] = lweights[name]
+                    else:
+                        pos[i+1] = sweights[name]
                 else:
-                    pos[i+1] = d_position[k][0][1]
+                    if d_position[k][0][1] > 0:
+                        pos[i+1] = lweights[name]
+                    else:
+                        pos[i+1] = sweights[name]
         
+    elif settings['model'] == 'FASTDTW':
+        d = {} ##Name of future : Close of all 88 futures
+        names = []  ##names of all 88 future
+        for i in range(0, nMarkets-1):
+            n = markets[i+1]
+            names.append(n)
+            d[n] = (CLOSE[i])
+            
+        d_dist = settings['historic_dist']
+
+        d_position = {}
+        for i in list(d_dist.keys()):
+            f = i[0]
+            s = i[1]
+            tup = d_dist[i]
+            l1 = d[f][-49:-1] ##take last 50 close
+            l2 = d[s][-49:-1] ##take last 50 close
+            dtw = fastdtw(l1,l2) 
+            distance = dtw[0]
+            change_f = d[f][-2] - d[f][-49]
+            change_s = d[s][-2] - d[s][-49]
+            diff = distance - tup
+            if distance > 2*tup:
+                if change_f > change_s :
+                    d_position[i] = ((-1,1),diff) ##assuming -1 means short while 1 means long
+                else:
+                    d_position[i] = ((1,-1),diff)
+
+
+        for i in range (len(names)): ##find position based on greatest variation
+            diff = 0
+            name = names[i]
+            for k in list(d_position.keys()):
+                if name in enumerate(k):
+                    if d_position[k][1] > diff :
+                        diff = d_position[k][1]
+                        if name == k[0]:
+                            pos[i+1] = 1
+                        else:
+                            pos[i+1] = -1
+
+                
+
+
     elif settings['model'] == 'ANOTHER MODEL':
         pass
 
     # check if latest economic data suggests downturn then activate short only strats 
-    # print(pos)
+    print(pos)
+    #print(sum(pos))
     if np.nansum(pos) > 0:
         pos = pos / np.nansum(abs(pos))
 
@@ -499,12 +552,12 @@ def mySettings():
     budget = 1000000
     slippage = 0.05
     # model = 'TA_multifactor' # trend_following, MLR_CLOSE, TA_multifactor
-    model = 'Pair_trade'
+    model = 'FASTDTW'
     lookback = 504 # 504
     beginInSample = '20180119' # '20180119'
     endInSample = None # None # taking the latest available
     dynamic_portfolio_allocation = False # activate=False to set even allocation for all futures and even for long/short
-    #clean()
+    clean()
     if dynamic_portfolio_allocation:
         mfw = market_factor_weights(markets)
     else:
@@ -512,11 +565,14 @@ def mySettings():
     with open('historic_corr.pickle','rb') as f:
         historic_corr = pickle.load(f)
 
+    with open('historic_distance.pickle','rb') as g:
+        historic_distance = pickle.load(g)
+
 
     settings = {'markets': markets, 'beginInSample': beginInSample, 'endInSample': endInSample, 'lookback': lookback,
                 'budget': budget, 'slippage': slippage, 'model': model, 'longs':0, 'shorts':0, 'days':0,
                 'dynamic_portfolio_allocation':dynamic_portfolio_allocation, 'market_factor_weights':mfw,
-                'historic_corr' : historic_corr}
+                'historic_corr' : historic_corr, 'historic_dist' : historic_distance}
     return settings
 
 
