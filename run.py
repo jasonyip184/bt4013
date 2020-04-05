@@ -486,14 +486,15 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
                         pos[i+1] = sweights[name]
         
     elif settings['model'] == 'FASTDTW':
+        #'sharpe': 17.767252, 'sortino': 44.6735113, 'returnYearly': 0.87132022, 'volaYearly': 0.04904079
         d = {} ##Name of future : Close of all 88 futures
         names = []  ##names of all 88 future
         for i in range(0, nMarkets-1):
             n = markets[i+1]
             names.append(n)
             d[n] = (CLOSE[i])
-            
-        d_dist = settings['historic_dist']
+
+        d_dist = settings['historic_dist'] ## key = tuple of name of 2 futures, value = average distance
 
         d_position = {}
         for i in list(d_dist.keys()):
@@ -502,29 +503,31 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
             tup = d_dist[i]
             l1 = d[f][-49:-1] ##take last 50 close
             l2 = d[s][-49:-1] ##take last 50 close
-            dtw = fastdtw(l1,l2) 
-            distance = dtw[0]
+            distance, _ = fastdtw(l1,l2) 
+            distance = distance / 50
             change_f = d[f][-2] - d[f][-49]
             change_s = d[s][-2] - d[s][-49]
             diff = distance - tup
-            if distance > 2*tup:
+            threshold = 7*tup
+            if distance > threshold:
                 if change_f > change_s :
                     d_position[i] = ((-1,1),diff) ##assuming -1 means short while 1 means long
                 else:
-                    d_position[i] = ((1,-1),diff)
+                    d_position[i] = ((-1,1),diff)
 
 
         for i in range (len(names)): ##find position based on greatest variation
             diff = 0
             name = names[i]
             for k in list(d_position.keys()):
-                if name in enumerate(k):
+                if name in k:
                     if d_position[k][1] > diff :
                         diff = d_position[k][1]
                         if name == k[0]:
-                            pos[i+1] = 1
+                            pos[i+1] = d_position[k][0][0]
                         else:
-                            pos[i+1] = -1
+                            pos[i+1] = d_position[k][0][1]
+
 
                 
 
