@@ -3,6 +3,7 @@ from sklearn.linear_model import LinearRegression
 from indicators import ADI, ADX, BB, CCI, EMA, OBV, RSI, SMA, StochOsc, StochRSI, UltiOsc, WilliamsR
 from economic_indicators import econ_long_short_allocation, market_factor_weights
 from model import train_lgb_model, get_lgb_prediction
+from pmdarima.arima import auto_arima
 from scipy.stats import pearsonr
 from statistics import stdev 
 from utils import clean
@@ -10,6 +11,7 @@ from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
 import pickle
 
+ARIMA_MODELS = {}
 
 def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
                     USA_ADP, USA_EARN, USA_HRS, USA_BOT, USA_BC, USA_BI, USA_CU, USA_CF, USA_CHJC, USA_CFNAI, USA_CP, USA_CCR, USA_CPI, USA_CCPI, USA_CINF, USA_DFMI, USA_DUR, USA_DURET, USA_EXPX, USA_EXVOL, USA_FRET, USA_FBI, USA_GBVL, USA_GPAY, USA_HI, USA_IMPX, USA_IMVOL, USA_IP, USA_IPMOM, USA_CPIC, USA_CPICM, USA_JBO, USA_LFPR, USA_LEI, USA_MPAY, USA_MP, USA_NAHB, USA_NLTTF, USA_NFIB, USA_NFP, USA_NMPMI, USA_NPP, USA_EMPST, USA_PHS, USA_PFED, USA_PP, USA_PPIC, USA_RSM, USA_RSY, USA_RSEA, USA_RFMI, USA_TVS, USA_UNR, USA_WINV,
@@ -535,8 +537,20 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
                             else:
                                 pos[i+1] = sweights[name]
 
+    elif settings['model'] == 'ARIMA':
+        for i in range(0, nMarkets-1):
+            try:
+                if markets[i+1] not in ARIMA_MODELS:
+                    model = auto_arima(np.log(CLOSE[i][:-1]), trace=False, error_action='ignore', suppress_warnings=True)
+                    ARIMA_MODELS[markets[i+1]] = model.fit(np.log(CLOSE[i][:-1]))
+                model = ARIMA_MODELS[markets[i+1]].fit(np.log(CLOSE[i][:-1]))
+                pred = model.predict(n_periods=1)[0]
+                # print(markets[i+1],pred, np.log(CLOSE[i][-1]))    
+                pos[i+1] = 1 if pred > np.log(CLOSE[i][-1]) else -1
+            except:
+                pos[i+1] = 0
+        print(f"Today's position in the {len(markets)} futures: {pos}")                  
 
-                
     elif settings['model'] == 'ANOTHER MODEL':
         pass
 
@@ -555,12 +569,14 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
 def mySettings():
     settings = {}
     # markets  = ['CASH','F_AD','F_BO']
-    #markets = ['F_ED', 'F_F', 'F_EB', 'F_ZQ', 'F_UZ', 'F_VW', 'F_SS'] # for LightGBM
+    # markets = ['CASH', 'F_ED', 'F_F', 'F_EB', 'F_ZQ', 'F_UZ', 'F_VW', 'F_SS'] # for LightGBM
     markets  = ['CASH', 'F_AD','F_BO','F_BP','F_C','F_CC','F_CD','F_CL','F_CT','F_DX','F_EC','F_ED','F_ES','F_FC','F_FV','F_GC','F_HG','F_HO','F_JY','F_KC','F_LB','F_LC','F_LN','F_MD','F_MP','F_NG','F_NQ','F_NR','F_O','F_OJ','F_PA','F_PL','F_RB','F_RU','F_S','F_SB','F_SF','F_SI','F_SM','F_TU','F_TY','F_US','F_W','F_XX','F_YM','F_AX','F_CA','F_DT','F_UB','F_UZ','F_GS','F_LX','F_SS','F_DL','F_ZQ','F_VX','F_AE','F_BG','F_BC','F_LU','F_DM','F_AH','F_CF','F_DZ','F_FB','F_FL','F_FM','F_FP','F_FY','F_GX','F_HP','F_LR','F_LQ','F_ND','F_NY','F_PQ','F_RR','F_RF','F_RP','F_RY','F_SH','F_SX','F_TR','F_EB','F_VF','F_VT','F_VW','F_GD','F_F']
     budget = 1000000
     slippage = 0.05
-    # model = 'TA_multifactor' # trend_following, MLR_CLOSE, TA_multifactor, Pair_trade, FASTDTW
+
+    # model = 'TA_multifactor' # trend_following, MLR_CLOSE, TA_multifactor, Pair_trade, FASTDTW, ARIMA
     model = 'FASTDTW'
+
     lookback = 504 # 504
     beginInSample = '20180119' # '20180119'
     endInSample = None # None # taking the latest available
@@ -587,7 +603,7 @@ def mySettings():
 # Evaluate trading system defined in current file.
 if __name__ == '__main__':
     import quantiacsToolbox
-    results = quantiacsToolbox.runts(__file__)
+    results = quantiacsToolbox.runts(__file__, )
     print(results['stats'])
     print('avg longs per day:', round(results['settings']['longs']/results['settings']['days'],3), ', avg shorts per day:', round(results['settings']['shorts'] / results['settings']['days'],3))
     # print(results['returns'])
