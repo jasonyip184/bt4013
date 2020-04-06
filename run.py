@@ -438,7 +438,8 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
         Pairwise correlation, taking position based on the greatest variation from
         average of the past 50 periods of 50 days
         '''
-       #'sharpe': 7.09799, 'sortino': 15.9176, 'returnYearly': 0.6204, 'volaYearly': 0.08741
+       #'sharpe': -0.046094, 'sortino': -0.06827, 'returnYearly': -0.00921, 'volaYearly': 0.1999
+       #avg longs per day: 6.343 , avg shorts per day: 6.746
         d = {} ##Name of future : Close of all 88 futures
         names = []  ##names of all 88 future
         for i in range(0, nMarkets-1):
@@ -458,7 +459,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
             change_f = d[f][-2] - d[f][-49]
             change_s = d[s][-2] - d[s][-49]
             diff = tup - corr
-            if diff > 0.2:
+            if diff > 0.3:
                 if change_f > change_s :
                     d_position[i] = ((-1,1),diff) ##assuming -1 means short while 1 means long
                 else:
@@ -486,7 +487,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
                         pos[i+1] = sweights[name]
         
     elif settings['model'] == 'FASTDTW':
-        #'sharpe': 17.767252, 'sortino': 44.6735113, 'returnYearly': 0.87132022, 'volaYearly': 0.04904079
+        #'sharpe': -2.25616, 'sortino': -3.095304, 'returnYearly': -0.63986, 'volaYearly': 0.28360
         d = {} ##Name of future : Close of all 88 futures
         names = []  ##names of all 88 future
         for i in range(0, nMarkets-1):
@@ -508,12 +509,12 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
             change_f = d[f][-2] - d[f][-49]
             change_s = d[s][-2] - d[s][-49]
             diff = distance - tup
-            threshold = 7*tup
+            threshold = 12*tup
             if distance > threshold:
                 if change_f > change_s :
                     d_position[i] = ((-1,1),diff) ##assuming -1 means short while 1 means long
                 else:
-                    d_position[i] = ((-1,1),diff)
+                    d_position[i] = ((1,-1),diff)
 
 
         for i in range (len(names)): ##find position based on greatest variation
@@ -524,14 +525,18 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
                     if d_position[k][1] > diff :
                         diff = d_position[k][1]
                         if name == k[0]:
-                            pos[i+1] = d_position[k][0][0]
+                            if d_position[k][0][0] > 0:
+                                pos[i+1] = lweights[name]
+                            else:
+                                pos[i+1] = sweights[name]
                         else:
-                            pos[i+1] = d_position[k][0][1]
+                            if d_position[k][0][1] > 0:
+                                pos[i+1] = lweights[name]
+                            else:
+                                pos[i+1] = sweights[name]
 
 
                 
-
-
     elif settings['model'] == 'ANOTHER MODEL':
         pass
 
@@ -554,12 +559,12 @@ def mySettings():
     markets  = ['CASH', 'F_AD','F_BO','F_BP','F_C','F_CC','F_CD','F_CL','F_CT','F_DX','F_EC','F_ED','F_ES','F_FC','F_FV','F_GC','F_HG','F_HO','F_JY','F_KC','F_LB','F_LC','F_LN','F_MD','F_MP','F_NG','F_NQ','F_NR','F_O','F_OJ','F_PA','F_PL','F_RB','F_RU','F_S','F_SB','F_SF','F_SI','F_SM','F_TU','F_TY','F_US','F_W','F_XX','F_YM','F_AX','F_CA','F_DT','F_UB','F_UZ','F_GS','F_LX','F_SS','F_DL','F_ZQ','F_VX','F_AE','F_BG','F_BC','F_LU','F_DM','F_AH','F_CF','F_DZ','F_FB','F_FL','F_FM','F_FP','F_FY','F_GX','F_HP','F_LR','F_LQ','F_ND','F_NY','F_PQ','F_RR','F_RF','F_RP','F_RY','F_SH','F_SX','F_TR','F_EB','F_VF','F_VT','F_VW','F_GD','F_F']
     budget = 1000000
     slippage = 0.05
-    # model = 'TA_multifactor' # trend_following, MLR_CLOSE, TA_multifactor
+    # model = 'TA_multifactor' # trend_following, MLR_CLOSE, TA_multifactor, Pair_trade, FASTDTW
     model = 'FASTDTW'
     lookback = 504 # 504
     beginInSample = '20180119' # '20180119'
     endInSample = None # None # taking the latest available
-    dynamic_portfolio_allocation = False # activate=False to set even allocation for all futures and even for long/short
+    dynamic_portfolio_allocation = True # activate=False to set even allocation for all futures and even for long/short
     clean()
     if dynamic_portfolio_allocation:
         mfw = market_factor_weights(markets)
