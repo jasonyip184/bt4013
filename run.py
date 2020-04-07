@@ -441,6 +441,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
         average of the past 50 periods of 50 days
         '''
        #'sharpe': 0.579391, 'sortino': 0.90271, 'returnYearly': 0.076509, 'volaYearly': 0.13205
+       # with allocation
        #avg longs per day: 6.343 , avg shorts per day: 6.746
         d = {} ##Name of future : Close of all 88 futures
         names = []  ##names of all 88 future
