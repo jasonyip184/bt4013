@@ -600,6 +600,58 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
         pos = np.array([0]+list(pos_1))
         #print(pos)
 
+    elif settings['model'] == 'GARCH':
+        # Log return of the closing data
+        #Prameters
+        bound1 = 1
+        bound2 = 1
+        cor_dir = f'./model_garch_files/correlation.txt'
+        with open(cor_dir) as f:
+            cor_dict = json.load(f)
+        log_return = np.diff(np.log(CLOSE))
+        #print(log_return)
+        #log_return = log_return[~np.isnan(log_return)]
+        #print(log_return[1])
+        for i in range(0, nMarkets-1):
+            train_Xs = log_return[i][:-1]
+            #test_Xs = log_return[i][-1]
+            sd = np.var(train_Xs)
+            # define model
+            model_dir = f'./model_garch_files/{markets[i+1]}_garch_model.txt'
+            with open(model_dir) as f:
+                params_dict = json.load(f)
+            p = params_dict['order'][0]
+            q = params_dict['order'][1]
+            model = arch_model(train_Xs, p=p, q=q)
+            model_fixed = model.fix(params_dict['params'])
+            # forecast the test set
+            forecasts = model_fixed.forecast()
+            #expected = forecasts.mean.iloc[-1:]['h.1']
+            var = forecasts.variance.iloc[-1:]['h.1']
+            #print(type(variance))
+
+            if(cor_dict[markets[i+1]]>0.03):
+                if (float(np.sqrt(var)) > bound1*np.std(train_Xs)):
+                    pos[i] = 1
+                elif (float(np.sqrt(var)) < bound2*np.std(train_Xs)):
+                    pos[i] = -1
+                else:
+                    pos[i] = 0
+            elif(cor_dict[markets[i+1]]<-0.03):
+                if (float(np.sqrt(var)) > bound1*np.std(train_Xs)):
+                    pos[i] = -1
+                elif (float(np.sqrt(var)) < bound2*np.std(train_Xs)):
+                    pos[i] = 1
+                else:
+                    pos[i] = 0  
+            else:
+                pos[i] = 0             
+    
+            # With the estimated return and variance, we can apply portfolio optimization
+        print(pos)
+        #print((np.array(result) * np.array(truth)).sum() / len(result))
+        pass
+
     elif settings['model'] == 'ANOTHER MODEL':
         pass
 
@@ -620,14 +672,15 @@ def mySettings():
     # markets  = ['CASH','F_AD','F_BO']
     markets = ['CASH', 'F_EB', 'F_ED', 'F_F', 'F_ZQ', 'F_UZ', 'F_VW', 'F_SS'] # for LightGBM
     # markets  = ['CASH', 'F_AD','F_BO','F_BP','F_C','F_CC','F_CD','F_CL','F_CT','F_DX','F_EC','F_ED','F_ES','F_FC','F_FV','F_GC','F_HG','F_HO','F_JY','F_KC','F_LB','F_LC','F_LN','F_MD','F_MP','F_NG','F_NQ','F_NR','F_O','F_OJ','F_PA','F_PL','F_RB','F_RU','F_S','F_SB','F_SF','F_SI','F_SM','F_TU','F_TY','F_US','F_W','F_XX','F_YM','F_AX','F_CA','F_DT','F_UB','F_UZ','F_GS','F_LX','F_SS','F_DL','F_ZQ','F_VX','F_AE','F_BG','F_BC','F_LU','F_DM','F_AH','F_CF','F_DZ','F_FB','F_FL','F_FM','F_FP','F_FY','F_GX','F_HP','F_LR','F_LQ','F_ND','F_NY','F_PQ','F_RR','F_RF','F_RP','F_RY','F_SH','F_SX','F_TR','F_EB','F_VF','F_VT','F_VW','F_GD','F_F']
+    #markets = [ 'CASH', 'F_GC', 'F_VX']
     budget = 1000000
     slippage = 0.05
 
     # model = 'TA_multifactor' # trend_following, MLR_CLOSE, TA_multifactor, Pair_trade, FASTDTW, ARIMA
     # model = 'Pair_trade'
 
-    lookback = 504 # 504
-    beginInSample = '20180119' # '20180119'
+    lookback = 20
+    beginInSample = '20190101' 
     endInSample = None # None # taking the latest available
     dynamic_portfolio_allocation = False # activate=False to set even allocation for all futures and even for long/short
     clean()
