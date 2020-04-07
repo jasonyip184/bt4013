@@ -553,7 +553,22 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
                 pos[i+1] = 0
         print(f"Today's position in the {len(markets)} futures: {pos}")                  
 
-    elif settings['model'] == 'Fourier_low_pass_trendfollowing':
+    elif settings['model'] == 'Fourier__trendfollowing':
+        #Parameters that filter the signal with specific range of signals
+        #Note that the lower bound should be larger than 0 and upper bound smaller than 1
+        filter_type = 'customed'
+        my_frequency_bound = [0.05, 0.2] 
+        filter_type = 'high' #Specify high/mid/low/customed for weekly signals, weekly to monthly signals, above monthly signals or customed frequency range
+        if filter_type == 'high':        
+            frequency_bound = [0.2, 1]
+        elif filter_type == 'mid': 
+            frequency_bound = [0.05, 0.2]
+        elif filter_type == 'low':  
+            frequency_bound = [0, 0.05]
+        elif filter_type == 'customed':
+            frequency_bound = my_frequency_bound
+
+        #Transform the close data by fourier filtering, only signals within the specific range remains
         transformed_close = []
         for i in range(0, nMarkets-1):
             signal = CLOSE[i][:-1]
@@ -561,24 +576,16 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
             T = 1  # sampling interval
             N = len(signal)
             f = np.linspace(0, 1 / T, N)
-            fft_low = []
-            fft_mid = []
-            fft_high = []
+            fft_filtered = []
             for j in range(int(N/2)):
-                if f[j] < 0.05:
-                    fft_low.append(fft[j])
-                    fft_mid.append(0)
-                    fft_high.append(0)
-                elif f[j] < 0.2:
-                    fft_low.append(0)
-                    fft_mid.append(fft[j])
-                    fft_high.append(0)
+                if f[j] > frequency_bound[0] and f[j] < frequency_bound[1]:
+                    fft_filtered.append(fft[j])
                 else:
-                    fft_low.append(0)
-                    fft_mid.append(0)
-                    fft_high.append(fft[j])
-            signal_low = np.fft.irfft(fft_low)
-            transformed_close.append(list(signal_low))
+                    fft_filtered.append(0)
+
+            signal_filtered = np.fft.irfft(fft_filtered)
+            transformed_close.append(list(signal_filtered))
+
         periodLonger = 200
         periodShorter = 40
         # Calculate Simple Moving Average (SMA)
@@ -591,89 +598,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
         pos_1[longEquity] = 1
         pos_1[shortEquity] = -1
         pos = np.array([0]+list(pos_1))
-        print(pos)
-
-
-    elif settings['model'] == 'Fourier_mid_pass_trendfollowing':
-        transformed_close = []
-        for i in range(0, nMarkets-1):
-            signal = CLOSE[i][:-1]
-            fft = np.fft.rfft(signal) 
-            T = 1  # sampling interval
-            N = len(signal)
-            f = np.linspace(0, 1 / T, N)
-            fft_low = []
-            fft_mid = []
-            fft_high = []
-            for j in range(int(N/2)):
-                if f[j] < 0.05:
-                    fft_low.append(fft[j])
-                    fft_mid.append(0)
-                    fft_high.append(0)
-                elif f[j] < 0.2:
-                    fft_low.append(0)
-                    fft_mid.append(fft[j])
-                    fft_high.append(0)
-                else:
-                    fft_low.append(0)
-                    fft_mid.append(0)
-                    fft_high.append(fft[j])
-            signal_mid = np.fft.irfft(fft_mid)
-            transformed_close.append(list(signal_mid))
-        periodLonger = 200
-        periodShorter = 40
-        # Calculate Simple Moving Average (SMA)
-        smaLongerPeriod = np.nansum(np.array(transformed_close)[:, -periodLonger:], axis=1) / periodLonger
-        smaShorterPeriod = np.nansum(np.array(transformed_close)[:, -periodShorter:], axis=1) / periodShorter
-
-        longEquity = smaShorterPeriod > smaLongerPeriod
-        shortEquity = ~longEquity
-        pos_1 = np.zeros(nMarkets-1)
-        pos_1[longEquity] = 1
-        pos_1[shortEquity] = -1
-        pos = np.array([0]+list(pos_1))
-        print(pos)
-
-
-    elif settings['model'] == 'Fourier_high_pass_trendfollowing':
-        transformed_close = []
-        for i in range(0, nMarkets-1):
-            signal = CLOSE[i][:-1]
-            fft = np.fft.rfft(signal)
-            T = 1  # sampling interval
-            N = len(signal)
-            f = np.linspace(0, 1 / T, N)
-            fft_low = []
-            fft_mid = []
-            fft_high = []
-            for j in range(int(N/2)):
-                if f[j] < 0.05:
-                    fft_low.append(fft[j])
-                    fft_mid.append(0)
-                    fft_high.append(0)
-                elif f[j] < 0.2:
-                    fft_low.append(0)
-                    fft_mid.append(fft[j])
-                    fft_high.append(0)
-                else:
-                    fft_low.append(0)
-                    fft_mid.append(0)
-                    fft_high.append(fft[j])
-            signal_high = np.fft.irfft(fft_high)
-            transformed_close.append(list(signal_high))
-        periodLonger = 20
-        periodShorter = 5
-        # Calculate Simple Moving Average (SMA)
-        smaLongerPeriod = np.nansum(np.array(transformed_close)[:, -periodLonger:], axis=1) / periodLonger
-        smaShorterPeriod = np.nansum(np.array(transformed_close)[:, -periodShorter:], axis=1) / periodShorter
-
-        longEquity = smaShorterPeriod > smaLongerPeriod
-        shortEquity = ~longEquity
-        pos_1 = np.zeros(nMarkets-1)
-        pos_1[longEquity] = 1
-        pos_1[shortEquity] = -1
-        pos = np.array([0]+list(pos_1))
-        print(pos)
+        #print(pos)
 
     elif settings['model'] == 'ANOTHER MODEL':
         pass
