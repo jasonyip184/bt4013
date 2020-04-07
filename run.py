@@ -440,7 +440,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
         Pairwise correlation, taking position based on the greatest variation from
         average of the past 50 periods of 50 days
         '''
-       #'sharpe': -0.046094, 'sortino': -0.06827, 'returnYearly': -0.00921, 'volaYearly': 0.1999
+       #'sharpe': 0.579391, 'sortino': 0.90271, 'returnYearly': 0.076509, 'volaYearly': 0.13205
        #avg longs per day: 6.343 , avg shorts per day: 6.746
         d = {} ##Name of future : Close of all 88 futures
         names = []  ##names of all 88 future
@@ -489,7 +489,8 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
                         pos[i+1] = sweights[name]
         
     elif settings['model'] == 'FASTDTW':
-        #'sharpe': -2.25616, 'sortino': -3.095304, 'returnYearly': -0.63986, 'volaYearly': 0.28360
+        #{'sharpe': 6.144199, 'sortino': 31.1159, 'returnYearly': 1.58415, 'volaYearly': 0.2578, 
+        # avg longs per day: 0.239 , avg shorts per day: 0.239
         d = {} ##Name of future : Close of all 88 futures
         names = []  ##names of all 88 future
         for i in range(0, nMarkets-1):
@@ -511,7 +512,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
             change_f = d[f][-2] - d[f][-49]
             change_s = d[s][-2] - d[s][-49]
             diff = distance - tup
-            threshold = 12*tup
+            threshold = 15*tup
             if distance > threshold:
                 if change_f > change_s :
                     d_position[i] = ((-1,1),diff) ##assuming -1 means short while 1 means long
@@ -575,7 +576,7 @@ def mySettings():
     slippage = 0.05
 
     # model = 'TA_multifactor' # trend_following, MLR_CLOSE, TA_multifactor, Pair_trade, FASTDTW, ARIMA
-    model = 'FASTDTW'
+    model = 'Pair_trade'
 
     lookback = 504 # 504
     beginInSample = '20180119' # '20180119'
