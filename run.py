@@ -577,7 +577,7 @@ def mySettings():
     slippage = 0.05
 
     # model = 'TA_multifactor' # trend_following, MLR_CLOSE, TA_multifactor, Pair_trade, FASTDTW, ARIMA
-    # model = 'Pair_trade'
+    model = 'FASTDTW'
 
     lookback = 504 # 504
     beginInSample = '20180119' # '20180119'
