@@ -1,6 +1,7 @@
 certifi==2019.11.28
 chardet==3.0.4
 cycler==0.10.0
+fastdtw==0.3.4
 idna==2.8
 joblib==0.14.1
 kiwisolver==1.1.0
@@ -18,3 +19,7 @@ six==1.14.0
 sklearn==0.0
 urllib3==1.25.8
 wincertstore==0.2
+ta==0.5.11
+statsmodels==0.11.1
+lightgbm==2.3.1
+pmdarima==1.5.3
