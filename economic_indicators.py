@@ -238,14 +238,14 @@ def econ_long_short_allocation(markets, start, end, w, activate):
 
         elif (market in us_bonds) or (market in rates):
 
-            long_sum = w['inflation'][market]*inflation_short + w['nfp'][market]*nfp_short + \
+            long_sum = w['inflation'][market]*inflation_long + w['nfp'][market]*nfp_short + \
             w['consumercredit'][market]*consumercredit_short + \
             w['bizoptimism'][market]*bizoptimism_short + w['housing'][market]*housing_short
 
             lw[market] = long_sum / np.nansum(w['inflation'][market]+w['nfp'][market]+w['consumercredit'][market]+\
             w['bizoptimism'][market]+w['housing'][market])
 
-            short_sum = w['inflation'][market]*inflation_long + w['nfp'][market]*nfp_long + \
+            short_sum = w['inflation'][market]*inflation_short + w['nfp'][market]*nfp_long + \
             w['consumercredit'][market]*consumercredit_long + \
             w['bizoptimism'][market]*bizoptimism_long + w['housing'][market]*housing_long
 
@@ -255,6 +255,14 @@ def econ_long_short_allocation(markets, start, end, w, activate):
         else:
             lw[market] = 1
             sw[market] = -1
+
+        # if np.isnan(lw[market]) or np.isnan(sw[market]):
+        #     for x in [w['rates'], w['inflation'], w['nfp'], w['usd'],
+        #     w['consumercredit'], w['bizoptimism'], w['housing'], 
+        #     w['production'], w['commods']]:
+        #         if market in x:
+        #             print(x[market], x)
+
     return lw, sw
 
 
@@ -330,5 +338,6 @@ def factor_weight(f1,f2):
     df.columns = ['CLOSE_1','CLOSE_2']
     df['CLOSE_2'] = df['CLOSE_2'].fillna(method='backfill')
     df = pd.concat([df1,df], join='inner', axis=1)
+    df.dropna(inplace=True)
     corr = np.corrcoef(df['CLOSE_1'],df['CLOSE_2'])[0,1]
     return abs(corr)
