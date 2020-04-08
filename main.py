@@ -628,8 +628,9 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
                         pos[i+1] = sweights[name]
         
     elif settings['model'] == 'FASTDTW':
-        #'sharpe': 6.144199, 'sortino': 31.1159, 'returnYearly': 1.58417, 'volaYearly': 0.25782
+        #'sharpe': 4.8632971, 'sortino': 17.09129, 'returnYearly': 1.216714, 'volaYearly': 0.25018
         # no allocation
+        # avg longs per day: 0.328 , avg shorts per day: 0.281
         d = {} ##Name of future : Close of all 88 futures
         names = []  ##names of all 88 future
         for i in range(0, nMarkets-1):
@@ -651,7 +652,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
             change_f = d[f][-2] - d[f][-49]
             change_s = d[s][-2] - d[s][-49]
             diff = distance - tup
-            threshold = 15*tup
+            threshold = 16*tup
             if distance > threshold:
                 if change_f > change_s :
                     d_position[i] = ((-1,1),diff) ##assuming -1 means short while 1 means long
@@ -694,7 +695,7 @@ def mySettings():
     budget = 1000000
     slippage = 0.05
 
-    model = 'FASTDTW' # TA, LIGHTGBM, pearson, FASTDTW, ARIMA, GARCH, fourier, sentiment, covid
+    model = 'pearson' # TA, LIGHTGBM, pearson, FASTDTW, ARIMA, GARCH, fourier, sentiment, covid
 
     lookback = 504 # 504
     beginInSample = '20180119' # '20180119'
