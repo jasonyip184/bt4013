@@ -46,9 +46,9 @@ def train_lgb_model(future_name):
                 verbose=False)
     test_accuracy = np.sum(lgb_clf.predict(test_X) == test_Y)/len(test_Y)
     if test_accuracy > 0.65:
-        lgb_clf.booster_.save_model(f'./model_pickle_files/{future_name}_model')
+        lgb_clf.booster_.save_model(f'./data/lgb_models/{future_name}_model')
         print (f"Successfully trained {future_name}. Test accuracy: {test_accuracy:.3f}")
-        print(f"Saved as {future_name}_model under /model_pickle_files.")
+        print(f"Saved as {future_name}_model under /data/lgb_models.")
 
 
 def get_lgb_prediction(model_dir, features):

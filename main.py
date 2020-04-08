@@ -8,7 +8,7 @@ from sklearn.ensemble import RandomForestRegressor
 from indicators import ADI, ADX, BB, CCI, EMA, OBV, RSI, SMA, StochOsc, StochRSI, UltiOsc, WilliamsR
 from economic_indicators import econ_long_short_allocation, market_factor_weights
 from utils import clean
-from model import train_lgb_model, get_lgb_prediction
+from LGB_model import train_lgb_model, get_lgb_prediction
 from pmdarima.arima import auto_arima
 from scipy.stats import pearsonr
 from statistics import stdev 
@@ -40,7 +40,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
     CLOSE = np.transpose(CLOSE)[1:]
     VOL = np.transpose(VOL)[1:]
 
-    if settings['model'] == 'TA_multifactor':
+    if settings['model'] == 'TA':
         '''
         Based on factors from https://www.investing.com/technical/us-spx-500-futures-technical-analysis
 
@@ -392,7 +392,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
                 feature_ADI = ADI(HIGH[i], LOW[i], CLOSE[i], VOL[i])
                 feature_WilliamsR = WilliamsR(HIGH[i], LOW[i], CLOSE[i])
                 features = np.array([[OPEN[i][-1], HIGH[i][-1], LOW[i][-1], CLOSE[i][-1], VOL[i][-1], feature_ADI[-1], feature_WilliamsR[-1], CLOSE[i][-2], CLOSE[i][-3]]])
-                model_dir = f'./model_pickle_files/{markets[i+1]}_model'
+                model_dir = f'./data/lgb_models/{markets[i+1]}_model'
                 prediction = get_lgb_prediction(model_dir, features)[0]
                 pos[i+1] = prediction
 
@@ -465,14 +465,121 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
                     else:
                         pos[i+1] = -1
 
-        
-    elif settings['model'] == 'Pair_trade':
+
+    elif settings['model'] == 'ARIMA':
+        for i in range(0, nMarkets-1):
+            try:
+                if markets[i+1] not in ARIMA_MODELS:
+                    model = auto_arima(np.log(CLOSE[i][:-1]), trace=False, error_action='ignore', suppress_warnings=True)
+                    ARIMA_MODELS[markets[i+1]] = model.fit(np.log(CLOSE[i][:-1]))
+                model = ARIMA_MODELS[markets[i+1]].fit(np.log(CLOSE[i][:-1]))
+                pred = model.predict(n_periods=1)[0]
+                # print(markets[i+1],pred, np.log(CLOSE[i][-1]))    
+                pos[i+1] = 1 if pred > np.log(CLOSE[i][-1]) else -1
+            except:
+                pos[i+1] = 0
+        print(f"Today's position in the {len(markets)} futures: {pos}")                  
+
+
+    elif settings['model'] == 'GARCH':
+        # Log return of the closing data
+        #Prameters
+        bound1 = 1
+        bound2 = 1
+        cor_dir = f'./data/garch_models/correlation.txt'
+        with open(cor_dir) as f:
+            cor_dict = json.load(f)
+        log_return = np.diff(np.log(CLOSE))
+        #print(log_return)
+        #log_return = log_return[~np.isnan(log_return)]
+        #print(log_return[1])
+        for i in range(0, nMarkets-1):
+            train_Xs = log_return[i][:-1]
+            #test_Xs = log_return[i][-1]
+            sd = np.var(train_Xs)
+            # define model
+            model_dir = f'./data/garch_models/{markets[i+1]}_garch_model.txt'
+            with open(model_dir) as f:
+                params_dict = json.load(f)
+            p = params_dict['order'][0]
+            q = params_dict['order'][1]
+            model = arch_model(train_Xs, p=p, q=q)
+            model_fixed = model.fix(params_dict['params'])
+            # forecast the test set
+            forecasts = model_fixed.forecast()
+            #expected = forecasts.mean.iloc[-1:]['h.1']
+            var = forecasts.variance.iloc[-1:]['h.1']
+            #print(type(variance))
+
+            if(cor_dict[markets[i+1]]>0.03):
+                if (float(np.sqrt(var)) > bound1*np.std(train_Xs)):
+                    pos[i] = 1
+                elif (float(np.sqrt(var)) < bound2*np.std(train_Xs)):
+                    pos[i] = -1
+                else:
+                    pos[i] = 0
+            elif(cor_dict[markets[i+1]]<-0.03):
+                if (float(np.sqrt(var)) > bound1*np.std(train_Xs)):
+                    pos[i] = -1
+                elif (float(np.sqrt(var)) < bound2*np.std(train_Xs)):
+                    pos[i] = 1
+                else:
+                    pos[i] = 0  
+            else:
+                pos[i] = 0             
+        # With the estimated return and variance, we can apply portfolio optimization
+        #print((np.array(result) * np.array(truth)).sum() / len(result))
+
+    
+    elif settings['model'] == 'fourier':
+        #Parameters that filter the signal with specific range of signals
+        #Note that the lower bound should be larger than 0 and upper bound smaller than 1
+        filter_type = 'customed'
+        my_frequency_bound = [0.05, 0.2] 
+        filter_type = 'high' #Specify high/mid/low/customed for weekly signals, weekly to monthly signals, above monthly signals or customed frequency range
+        if filter_type == 'high':        
+            frequency_bound = [0.2, 1]
+        elif filter_type == 'mid': 
+            frequency_bound = [0.05, 0.2]
+        elif filter_type == 'low':  
+            frequency_bound = [0, 0.05]
+        elif filter_type == 'customed':
+            frequency_bound = my_frequency_bound
+
+        #Transform the close data by fourier filtering, only signals within the specific range remains
+        transformed_close = []
+        for i in range(0, nMarkets-1):
+            signal = CLOSE[i][:-1]
+            fft = np.fft.rfft(signal)
+            T = 1  # sampling interval
+            N = len(signal)
+            f = np.linspace(0, 1 / T, N)
+            fft_filtered = []
+            for j in range(int(N/2)):
+                if f[j] > frequency_bound[0] and f[j] < frequency_bound[1]:
+                    fft_filtered.append(fft[j])
+                else:
+                    fft_filtered.append(0)
+            signal_filtered = np.fft.irfft(fft_filtered)
+            transformed_close.append(list(signal_filtered))
+
+        smaLongerPeriod = np.nansum(np.array(transformed_close)[:, -periodLonger:], axis=1) / periodLonger	
+        smaShorterPeriod = np.nansum(np.array(transformed_close)[:, -periodShorter:], axis=1) / periodShorter
+        longEquity = smaShorterPeriod > smaLongerPeriod
+        shortEquity = ~longEquity
+        pos_1 = np.zeros(nMarkets-1)
+        pos_1[longEquity] = 1
+        pos_1[shortEquity] = -1
+        pos = np.array([0]+list(pos_1))
+
+
+    elif settings['model'] == 'pearson':
         '''
         Pairwise correlation, taking position based on the greatest variation from
         average of the past 50 periods of 50 days
         '''
-       #'sharpe': 0.57939, 'sortino': 0.9027189, 'returnYearly': 0.076509, 'volaYearly': 0.13205
-       # with allocation
+        #'sharpe': 0.57939, 'sortino': 0.9027189, 'returnYearly': 0.076509, 'volaYearly': 0.13205
+        # with allocation
         #avg longs per day: 6.343 , avg shorts per day: 6.746
         d = {} ##Name of future : Close of all 88 futures
         names = []  ##names of all 88 future
@@ -570,20 +677,6 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
                             else:
                                 pos[i+1] = sweights[name]
 
-    elif settings['model'] == 'ARIMA':
-        for i in range(0, nMarkets-1):
-            try:
-                if markets[i+1] not in ARIMA_MODELS:
-                    model = auto_arima(np.log(CLOSE[i][:-1]), trace=False, error_action='ignore', suppress_warnings=True)
-                    ARIMA_MODELS[markets[i+1]] = model.fit(np.log(CLOSE[i][:-1]))
-                model = ARIMA_MODELS[markets[i+1]].fit(np.log(CLOSE[i][:-1]))
-                pred = model.predict(n_periods=1)[0]
-                # print(markets[i+1],pred, np.log(CLOSE[i][-1]))    
-                pos[i+1] = 1 if pred > np.log(CLOSE[i][-1]) else -1
-            except:
-                pos[i+1] = 0
-        print(f"Today's position in the {len(markets)} futures: {pos}")                  
-
     # check if latest economic data suggests downturn then activate short only strats 
     print("Positions:", pos)
     if np.nansum(pos) > 0:
@@ -597,19 +690,17 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
 
 def mySettings():
     settings = {}
-    markets  = ['CASH', 'F_AD','F_BO','F_BP','F_C','F_CC','F_CD','F_CL','F_CT','F_DX','F_EC','F_ED','F_ES','F_FC','F_FV','F_GC','F_HG','F_HO','F_JY','F_KC','F_LB','F_LC','F_LN','F_MD','F_MP','F_NG','F_NQ','F_NR','F_O','F_OJ','F_PA','F_PL','F_RB','F_RU','F_S','F_SB','F_SF','F_SI','F_SM','F_TU','F_TY','F_US','F_W','F_XX','F_YM','F_AX','F_CA','F_DT','F_UB','F_UZ','F_GS','F_LX','F_SS','F_DL','F_ZQ','F_VX','F_AE','F_BG','F_BC','F_LU','F_DM','F_AH','F_CF','F_DZ','F_FB','F_FL','F_FM','F_FP','F_FY','F_GX','F_HP','F_LR','F_LQ','F_ND','F_NY','F_PQ','F_RR','F_RF','F_RP','F_RY','F_SH','F_SX','F_TR','F_EB','F_VF','F_VT','F_VW','F_GD','F_F']
+    markets  = ['CASH','F_AD','F_BO','F_BP','F_C','F_CC','F_CD','F_CL','F_CT','F_DX','F_EC','F_ED','F_ES','F_FC','F_FV','F_GC','F_HG','F_HO','F_JY','F_KC','F_LB','F_LC','F_LN','F_MD','F_MP','F_NG','F_NQ','F_NR','F_O','F_OJ','F_PA','F_PL','F_RB','F_RU','F_S','F_SB','F_SF','F_SI','F_SM','F_TU','F_TY','F_US','F_W','F_XX','F_YM','F_AX','F_CA','F_DT','F_UB','F_UZ','F_GS','F_LX','F_SS','F_DL','F_ZQ','F_VX','F_AE','F_BG','F_BC','F_LU','F_DM','F_AH','F_CF','F_DZ','F_FB','F_FL','F_FM','F_FP','F_FY','F_GX','F_HP','F_LR','F_LQ','F_ND','F_NY','F_PQ','F_RR','F_RF','F_RP','F_RY','F_SH','F_SX','F_TR','F_EB','F_VF','F_VT','F_VW','F_GD','F_F']
     budget = 1000000
     slippage = 0.05
 
-    model = 'TA_multifactor' # trend_following, TA_multifactor, Pair_trade, FASTDTW, ARIMA, sentiment, covid
+    model = 'FASTDTW' # TA, LIGHTGBM, pearson, FASTDTW, ARIMA, GARCH, fourier, sentiment, covid
 
     lookback = 504 # 504
     beginInSample = '20180119' # '20180119'
-    endInSample = None # None # taking the latest available
-    dynamic_portfolio_allocation = False # =False to set even allocation for all futures and even for long/short, set to False when downloading data
-    sentiment = False
-    covid = True
-    # clean() # clean data's headers. only need to uncomment this when you download data again.
+    endInSample = '20200331' # None # taking the latest available
+    dynamic_portfolio_allocation = True # =False to set even allocation for all futures and even for long/short, set to False when downloading data
+    # clean() # clean data's headers. only need to uncomment this after you have downloaded data again.
     
     if dynamic_portfolio_allocation:
         mfw = market_factor_weights(markets)
@@ -618,24 +709,24 @@ def mySettings():
 
     covid_data = sentiment_data = historic_corr = historic_distance = None 
     if model == 'sentiment':
-        with open('trump_train_data.pickle', 'rb') as handle:
+        with open('data/trump_train_data.pickle', 'rb') as handle:
             sentiment_data = pickle.load(handle)
     elif model == 'covid':
-        covid_data = pd.read_csv('time_series_19-covid-Confirmed.csv')
+        covid_data = pd.read_csv('data/time_series_19-covid-Confirmed.csv')
         del covid_data['Province/State'], covid_data['Lat'], covid_data['Long']
     elif model == 'Pairs_trade':
-        with open('historic_corr.pickle','rb') as f:
+        with open('data/historic_corr.pickle','rb') as f:
             historic_corr = pickle.load(f)
     elif model == 'FASTDTW':
-        with open('historic_distance.pickle','rb') as g:
+        with open('data/historic_distance.pickle','rb') as g:
             historic_distance = pickle.load(g)
-
 
     settings = {'markets': markets, 'beginInSample': beginInSample, 'endInSample': endInSample, 'lookback': lookback,
                 'budget': budget, 'slippage': slippage, 'model': model, 'longs':0, 'shorts':0, 'days':0,
                 'dynamic_portfolio_allocation':dynamic_portfolio_allocation, 'market_factor_weights':mfw,
                 'sentiment_data':sentiment_data,'covid_data':covid_data,'historic_corr':historic_corr,
                 'historic_dist':historic_distance}
+
     return settings
 
 
@@ -645,5 +736,3 @@ if __name__ == '__main__':
     results = quantiacsToolbox.runts(__file__, )
     print(results['stats'])
     print('avg longs per day:', round(results['settings']['longs']/results['settings']['days'],3), ', avg shorts per day:', round(results['settings']['shorts'] / results['settings']['days'],3))
-    # print(results['returns'])
-    # print(results['marketEquity'])

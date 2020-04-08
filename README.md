@@ -1,13 +1,16 @@
-# bt4013
-**create an environment named bt4013_env from the .yml file if you don't have the bt4013_env locally yet**
+# BT4013 Project Team QuQu
+**1. Create conda environment**
+conda create -n bt4013_ququ_env python=3.7
 
-conda env create -f bt4013_env.yml
+**2. Activate environment**
+activate bt4013_ququ_env
 
-**export your environment if you have new packages and ready to push**
+**3. Install dependencies**
+pip install -r requirements.txt
 
-activate bt4013_env
-conda env export > bt4013_env.yml
+**4. Run main**
+python main.py
 
-**activate your bt4013_env locally if you have it, then update the latest packages from the new .yml file after pulling**
-
-conda env update --name bt4013_env --file bt4013_env.yml  --prune
+**Additional:**
+Comment out clean() in main.py when downloading new tickerData
+Uncomment clean() again to standardize the headers in tickerData. Sometimes it is ' CLOSE' vs 'CLOSE'
