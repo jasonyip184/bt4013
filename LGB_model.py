@@ -12,8 +12,16 @@ import lightgbm as lgb
 def train_lgb_model(future_name):
     # Data munging
     df = pd.read_csv(f"./tickerData/{future_name}.txt")
-    df['ADI'] = ADI(df['HIGH'], df['LOW'], df['CLOSE'], df['VOL'])
-    df['WilliamsR'] = WilliamsR(df['HIGH'], df['LOW'], df['CLOSE'])
+    # Limit to 31st Dec 2019 data
+    df['DATE'] = pd.to_datetime(df['DATE'], format='%Y%m%d')
+    df = df[df['DATE'] <= '2019-12-31']
+
+    df['ADI'] = ADI(df['HIGH'], df['LOW'], df['CLOSE'], df['VOL']) # Volume
+    df['WilliamsR'] = WilliamsR(df['HIGH'], df['LOW'], df['CLOSE']) # Momentum
+    BBs = BB(df['CLOSE'], 10)
+    df['BB_high_crosses'] = BBs[0] # Volatility
+    df['BB_low_crosses'] = BBs[1] # Volatility
+    df['CCI'] = CCI(df['HIGH'], df['LOW'], df['CLOSE'], 10) # Trend
     df['label'] = np.where(df['CLOSE'].shift(periods=-1) - df['CLOSE'] < 0, -1, 1)
     # If change is too small, don't take position
     returns = abs(df['CLOSE'].shift(periods=-1) - df['CLOSE'])
@@ -23,13 +31,13 @@ def train_lgb_model(future_name):
     df['LAG_1'] = df['CLOSE'].shift(periods=1)
     df['LAG_2'] = df['CLOSE'].shift(periods=2)
     df['LABEL_var'] = df['CLOSE'].shift(periods=-1)
-    data = df.iloc[2:][['OPEN','HIGH','LOW','CLOSE','VOL','ADI','WilliamsR','LAG_1','LAG_2','label']]
+    data = df.iloc[2:][['OPEN','HIGH','LOW','CLOSE','VOL','ADI','WilliamsR','BB_high_crosses','BB_low_crosses','CCI','LAG_1','LAG_2','label']]
 
     # Split test-train set
     train_df, test_df = train_test_split(data, test_size=0.2, shuffle=False)
-    train_X = train_df[['OPEN','HIGH','LOW','CLOSE','VOL','ADI','WilliamsR','LAG_1','LAG_2']].to_numpy()
+    train_X = train_df[['OPEN','HIGH','LOW','CLOSE','VOL','ADI','WilliamsR','BB_high_crosses','BB_low_crosses','CCI','LAG_1','LAG_2']].to_numpy()
     train_Y = train_df['label'].to_numpy()
-    test_X = test_df[['OPEN','HIGH','LOW','CLOSE','VOL','ADI','WilliamsR','LAG_1','LAG_2']].to_numpy()
+    test_X = test_df[['OPEN','HIGH','LOW','CLOSE','VOL','ADI','WilliamsR','BB_high_crosses','BB_low_crosses','CCI','LAG_1','LAG_2']].to_numpy()
     test_Y = test_df['label'].to_numpy()
 
     # Create lgb model

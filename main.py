@@ -386,15 +386,34 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
                 pos[i+1] = lweights[future_name]
 
     elif settings['model'] == 'LIGHTGBM':
-        for i in range(0, nMarkets-1):
-            future_name = markets[i+1]
-            if future_name in ['CASH', 'F_EB', 'F_ED', 'F_F', 'F_ZQ', 'F_UZ', 'F_VW', 'F_SS']:
+        for i in range(0, nMarkets - 1):
+            future_name = markets[i + 1]
+            if future_name in ["CASH", "F_ED", "F_UZ", "F_SS", "F_ZQ", "F_EB", "F_VW", "F_F"]:
                 feature_ADI = ADI(HIGH[i], LOW[i], CLOSE[i], VOL[i])
                 feature_WilliamsR = WilliamsR(HIGH[i], LOW[i], CLOSE[i])
-                features = np.array([[OPEN[i][-1], HIGH[i][-1], LOW[i][-1], CLOSE[i][-1], VOL[i][-1], feature_ADI[-1], feature_WilliamsR[-1], CLOSE[i][-2], CLOSE[i][-3]]])
-                model_dir = f'./data/lgb_models/{markets[i+1]}_model'
+                feature_BB_high_crosses, feature_BB_low_crosses = BB(CLOSE[i], 10)
+                feature_CCI = CCI(LOW[i], CLOSE[i], VOL[i], 10)
+                features = np.array(
+                    [
+                        [
+                            OPEN[i][-1],
+                            HIGH[i][-1],
+                            LOW[i][-1],
+                            CLOSE[i][-1],
+                            VOL[i][-1],
+                            feature_ADI[-1],
+                            feature_WilliamsR[-1],
+                            feature_BB_high_crosses[-1],
+                            feature_BB_low_crosses[-1],
+                            feature_CCI[-1],
+                            CLOSE[i][-2],
+                            CLOSE[i][-3],
+                        ]
+                    ]
+                )
+                model_dir = f"./data/lgb_models/{markets[i+1]}_model"
                 prediction = get_lgb_prediction(model_dir, features)[0]
-                pos[i+1] = prediction
+                pos[i + 1] = prediction
 
             
     elif settings['model'] == 'sentiment':
@@ -695,7 +714,7 @@ def mySettings():
     budget = 1000000
     slippage = 0.05
 
-    model = 'pearson' # TA, LIGHTGBM, pearson, FASTDTW, ARIMA, GARCH, fourier, sentiment, covid
+    model = 'LIGHTGBM' # TA, LIGHTGBM, pearson, FASTDTW, ARIMA, GARCH, fourier, sentiment, covid
 
     lookback = 504 # 504
     beginInSample = '20180119' # '20180119'
