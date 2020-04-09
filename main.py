@@ -529,7 +529,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
         #Note that the lower bound should be larger than 0 and upper bound smaller than 1
         filter_type = 'customed'
         my_frequency_bound = [0.05, 0.2] 
-        filter_type = 'high' #Specify high/mid/low/customed for weekly signals, weekly to monthly signals, above monthly signals or customed frequency range
+        filter_type = 'low' #Specify high/mid/low/customed for weekly signals, weekly to monthly signals, above monthly signals or customed frequency range
         if filter_type == 'high':        
             frequency_bound = [0.2, 1]
         elif filter_type == 'mid': 
@@ -556,6 +556,8 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
             signal_filtered = np.fft.irfft(fft_filtered)
             transformed_close.append(list(signal_filtered))
 
+        periodLonger = 200
+        periodShorter = 40
         smaLongerPeriod = np.nansum(np.array(transformed_close)[:, -periodLonger:], axis=1) / periodLonger	
         smaShorterPeriod = np.nansum(np.array(transformed_close)[:, -periodShorter:], axis=1) / periodShorter
         longEquity = smaShorterPeriod > smaLongerPeriod
@@ -689,7 +691,7 @@ def mySettings():
     budget = 1000000
     slippage = 0.05
 
-    model = 'FASTDTW' # TA, LIGHTGBM, pearson, FASTDTW, ARIMA, GARCH, fourier, sentiment, covid
+    model = 'fourier' # TA, LIGHTGBM, pearson, FASTDTW, ARIMA, GARCH, fourier, sentiment, covid
 
     lookback = 504 # 504
     beginInSample = '20180119' # '20180119'
