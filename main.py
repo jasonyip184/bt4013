@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import pickle
 import datetime
+import json
 from datetime import datetime
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
@@ -15,6 +16,7 @@ from statistics import stdev
 from utils import clean
 from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
+from arch import arch_model
 
 ARIMA_MODELS = {}
 
@@ -691,7 +693,7 @@ def mySettings():
     budget = 1000000
     slippage = 0.05
 
-    model = 'fourier' # TA, LIGHTGBM, pearson, FASTDTW, ARIMA, GARCH, fourier, sentiment, covid
+    model = 'LIGHTGBM' # TA, LIGHTGBM, pearson, FASTDTW, ARIMA, GARCH, fourier, sentiment, covid
 
     lookback = 504 # 504
     beginInSample = '20180119' # '20180119'
