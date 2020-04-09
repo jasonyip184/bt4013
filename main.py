@@ -270,116 +270,87 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
         '''
         for i in range(0, nMarkets-1):
             future_name = markets[i+1]
-            # Trend following
-            # 'sharpe': -0.40248, 'sortino': -0.7310, short - 'sharpe': 3.47, 'sortino': 10.5
-            if (SMA5_cross_buys[i] == True) or (SMA10_cross_buys[i] == True) or (SMA20_cross_buys[i] == True) or (SMA50_cross_buys[i] == True) or (SMA100_cross_buys[i] == True) or (SMA200_cross_buys == True):
-                pos[i+1] = 1
-            if (SMA5_cross_sells[i] == True) or (SMA10_cross_sells[i] == True) or (SMA20_cross_sells[i] == True) or (SMA50_cross_sells[i] == True) or (SMA100_cross_sells[i] == True) or (SMA200_cross_sells == True):
-                pos[i+1] = -1
+            # # Trend following
+            # if (SMA5_cross_buys[i] == True) or (SMA10_cross_buys[i] == True) or (SMA20_cross_buys[i] == True) or (SMA50_cross_buys[i] == True) or (SMA100_cross_buys[i] == True) or (SMA200_cross_buys == True):
+            #     pos[i+1] = 1
+            # if (SMA5_cross_sells[i] == True) or (SMA10_cross_sells[i] == True) or (SMA20_cross_sells[i] == True) or (SMA50_cross_sells[i] == True) or (SMA100_cross_sells[i] == True) or (SMA200_cross_sells == True):
+            #     pos[i+1] = -1
 
             # Mean reverting
-            # 'sharpe': -4.143, 'sortino': -4.988, short - 'sharpe': -0.6878, 'sortino': -1.526
-            if (SMA5_cross_buys[i] == True) or (SMA10_cross_buys[i] == True) or (SMA20_cross_buys[i] == True) or (SMA50_cross_buys[i] == True) or (SMA100_cross_buys[i] == True) or (SMA200_cross_buys == True):
-                pos[i+1] = -1
-            if (SMA5_cross_sells[i] == True) or (SMA10_cross_sells[i] == True) or (SMA20_cross_sells[i] == True) or (SMA50_cross_sells[i] == True) or (SMA100_cross_sells[i] == True) or (SMA200_cross_sells == True):
-                pos[i+1] = 1
+            # if (SMA5_cross_buys[i] == True) or (SMA10_cross_buys[i] == True) or (SMA20_cross_buys[i] == True) or (SMA50_cross_buys[i] == True) or (SMA100_cross_buys[i] == True) or (SMA200_cross_buys == True):
+            #     pos[i+1] = -1
+            # if (SMA5_cross_sells[i] == True) or (SMA10_cross_sells[i] == True) or (SMA20_cross_sells[i] == True) or (SMA50_cross_sells[i] == True) or (SMA100_cross_sells[i] == True) or (SMA200_cross_sells == True):
+            #     pos[i+1] = 1
 
-            # Trend following
-            # 'sharpe': -0.5942, 'sortino': -0.9762, short - 'sharpe': 2.728, 'sortino': 7.063
-            if (EMA5_cross_buys[i] == True) or (EMA10_cross_buys[i] == True) or (EMA20_cross_buys[i] == True) or (EMA50_cross_buys[i] == True) or (EMA100_cross_buys[i] == True) or (EMA200_cross_buys == True):
-                pos[i+1] = 1
-            if (EMA5_cross_sells[i] == True) or (EMA10_cross_sells[i] == True) or (EMA20_cross_sells[i] == True) or (EMA50_cross_sells[i] == True) or (EMA100_cross_sells[i] == True) or (EMA200_cross_sells == True):
-                pos[i+1] = -1
+            # # Trend following
+            # if (EMA5_cross_buys[i] == True) or (EMA10_cross_buys[i] == True) or (EMA20_cross_buys[i] == True) or (EMA50_cross_buys[i] == True) or (EMA100_cross_buys[i] == True) or (EMA200_cross_buys == True):
+            #     pos[i+1] = 1
+            # if (EMA5_cross_sells[i] == True) or (EMA10_cross_sells[i] == True) or (EMA20_cross_sells[i] == True) or (EMA50_cross_sells[i] == True) or (EMA100_cross_sells[i] == True) or (EMA200_cross_sells == True):
+            #     pos[i+1] = -1
 
-            # Mean-reverting
-            # 'sharpe': -3.806, 'sortino': -4.845, short - 'sharpe': -0.5814, 'sortino': -1.312
-            if (EMA5_cross_buys[i] == True) or (EMA10_cross_buys[i] == True) or (EMA20_cross_buys[i] == True) or (EMA50_cross_buys[i] == True) or (EMA100_cross_buys[i] == True) or (EMA200_cross_buys == True):
-                pos[i+1] = -1
-            if (EMA5_cross_sells[i] == True) or (EMA10_cross_sells[i] == True) or (EMA20_cross_sells[i] == True) or (EMA50_cross_sells[i] == True) or (EMA100_cross_sells[i] == True) or (EMA200_cross_sells == True):
-                pos[i+1] = 1
+            # # Mean-reverting
+            # if (EMA5_cross_buys[i] == True) or (EMA10_cross_buys[i] == True) or (EMA20_cross_buys[i] == True) or (EMA50_cross_buys[i] == True) or (EMA100_cross_buys[i] == True) or (EMA200_cross_buys == True):
+            #     pos[i+1] = -1
+            # if (EMA5_cross_sells[i] == True) or (EMA10_cross_sells[i] == True) or (EMA20_cross_sells[i] == True) or (EMA50_cross_sells[i] == True) or (EMA100_cross_sells[i] == True) or (EMA200_cross_sells == True):
+            #     pos[i+1] = 1
 
-            # 'sharpe': -1.973, 'sortino': -3.275, short - 'sharpe': -3.544 'sortino': -3.988
-            if ADX_bullish_crosses[i] == True:
-                pos[i+1] = 1
-            elif ADX_bearish_crosses[i] == True:
-                pos[i+1] = -1
+            # if ADX_bullish_crosses[i] == True:
+            #     pos[i+1] = 1
+            # elif ADX_bearish_crosses[i] == True:
+            #     pos[i+1] = -1
 
-            # 'sharpe': -1.705, 'sortino': -2.380, short - 'sharpe': 0.9374, 'sortino': 1.5024
-            if MACD_bullish_zero_cross[i] == True:
-                pos[i+1] = 1
-            elif MACD_bearish_zero_cross[i] == True:
-                pos[i+1] = -1
+            # if MACD_bullish_zero_cross[i] == True:
+            #     pos[i+1] = 1
+            # elif MACD_bearish_zero_cross[i] == True:
+            #     pos[i+1] = -1
 
-            # 'sharpe': -0.0093, 'sortino': -0.0198, short - 'sharpe': -0.0094, 'sortino': -0.0198
-            # avg longs per day: 5.021 , avg shorts per day: 5.872
-            if CCI_emerging_bulls[i] == True:
-                pos[i+1] = 1
-            elif CCI_emerging_bears[i] == True:
-                pos[i+1] = -1
+            # if CCI_emerging_bulls[i] == True:
+            #     pos[i+1] = 1
+            # elif CCI_emerging_bears[i] == True:
+            #     pos[i+1] = -1
 
-            # 'sharpe': -4.308, 'sortino': -4.356, short - 'sharpe': 2.323, 'sortino': 9.84
-            # avg longs per day: 0.319, avg shorts per day: 0.149
-            if RSI_bullish_reversal[i] == True:
-                pos[i+1] = 1
-            elif RSI_bearish_reversal[i] == True:
-                pos[i+1] = -1
+            # if RSI_bullish_reversal[i] == True:
+            #     pos[i+1] = 1
+            # elif RSI_bearish_reversal[i] == True:
+            #     pos[i+1] = -1
 
-            # 'sharpe': -3.174, 'sortino': -4.730, short - 'sharpe': 0.0643, 'sortino': 0.108
-            # avg longs per day: 17.362, avg shorts per day: 17.404
-            if StochOsc_bullish_cross[i] == True:
-                pos[i+1] = 1
-            elif StochOsc_bearish_cross[i] == True:
-                pos[i+1] = -1
+            # if StochOsc_bullish_cross[i] == True:
+            #     pos[i+1] = 1
+            # elif StochOsc_bearish_cross[i] == True:
+            #     pos[i+1] = -1
 
-            # 'sharpe': 0.2383, 'sortino': 0.4939, short - 'sharpe': 0.9064, 'sortino': 1.599
-            # avg longs per day: 0.809 , avg shorts per day: 1.553
-            if WilliamsR_uptrend[i] == True:
-                pos[i+1] = 1
-            elif WilliamsR_downtrend[i] == True:
-                pos[i+1] = -1
+            # if WilliamsR_uptrend[i] == True:
+            #     pos[i+1] = 1
+            # elif WilliamsR_downtrend[i] == True:
+            #     pos[i+1] = -1
 
-            # 'sharpe': -1.57, 'sortino': -2.159, short - 'sharpe': 0.8575, 'sortino': 1.248
-            # avg longs per day: 2.362 , avg shorts per day: 3.0
-            if UltiOsc_bullish_cross[i] == True:
-                pos[i+1] = 1
-            elif UltiOsc_bearish_cross[i] == True:
-                pos[i+1] = -1
+            # if UltiOsc_bullish_cross[i] == True:
+            #     pos[i+1] = 1
+            # elif UltiOsc_bearish_cross[i] == True:
+            #     pos[i+1] = -1
 
-            # 'sharpe': 0.7773, 'sortino': 1.288, short - 'sharpe': 2.3757, 'sortino': 70.82
-            # avg longs per day: 0.128 , avg shorts per day: 0.362
-            if UltiOsc_bullish_reversal[i] == True:
-                pos[i+1] = 1
-            elif UltiOsc_bearish_reversal[i] == True:
-                pos[i+1] = -1
+            # if UltiOsc_bullish_reversal[i] == True:
+            #     pos[i+1] = 1
+            # elif UltiOsc_bearish_reversal[i] == True:
+            #     pos[i+1] = -1
 
-            # 'sharpe': -0.2829, 'sortino': -0.5704, short - 'sharpe': 2.4719, 'sortino': 5.47
-            # avg longs per day: 1.043 , avg shorts per day: 1.702
-            if ADI_bullish_trend_confo[i] == True:
-                pos[i+1] = lweights[future_name]
-            elif ADI_bearish_trend_confo[i] == True:
-                pos[i+1] = sweights[future_name]
+            # if ADI_bullish_trend_confo[i] == True:
+            #     pos[i+1] = lweights[future_name]
+            # elif ADI_bearish_trend_confo[i] == True:
+            #     pos[i+1] = sweights[future_name]
 
-            # 'sharpe': 2.3531, 'sortino': 5.9688, short - 'sharpe': 5.9294, 'sortino': 18.667
-            # avg longs per day: 20.638 , avg shorts per day: 21.255
-            if OBV_bullish_trend_confo[i] == True:
-                pos[i+1] = 1
-            elif OBV_bearish_trend_confo[i] == True:
-                pos[i+1] = -1
+            # if OBV_bullish_trend_confo[i] == True:
+            #     pos[i+1] = 1
+            # elif OBV_bearish_trend_confo[i] == True:
+            #     pos[i+1] = -1
 
-            # Mean-reverting
-            # 'sharpe': -5.577, 'sortino': -6.322, short - 'sharpe': -4.714, 'sortino': -5.181
-            # avg longs per day: 8.766 , avg shorts per day: 8.511
-            if BB_bullish_reversal[i] == True:
-                pos[i+1] = 1
-            elif BB_bearish_reversal[i] == True:
-                pos[i+1] = -1
+            # # Mean-reverting
+            # if BB_bullish_reversal[i] == True:
+            #     pos[i+1] = 1
+            # elif BB_bearish_reversal[i] == True:
+            #     pos[i+1] = -1
 
-            # Trend-following
-            # 'sharpe': 5.6105, 'sortino': 15.905, short - 'sharpe': 4.799, 'sortino': 12.11
-            # avg longs per day: 8.511 , avg shorts per day: 8.766
-            # with portfolio allocation...
-            # 'sharpe': 5.6286, 'sortino': 16.472, short - 'sharpe': 5.1068, 'sortino': 13.10
-            # avg longs per day: 8.511 , avg shorts per day: 8.766
+            # # Trend-following
             if BB_bullish_reversal[i] == True:
                 pos[i+1] = sweights[future_name]
             elif BB_bearish_reversal[i] == True:
@@ -588,6 +559,7 @@ def myTradingSystem(DATE, OPEN, HIGH, LOW, CLOSE, VOL,
             names.append(n)
             d[n] = (CLOSE[i])
         d_corr = settings['historic_corr']
+
         ## key = tuple of name of 2 futures, value = position to take for ((future1,future2),difference)
         d_position = {}
         for i in list(d_corr.keys()):
@@ -695,7 +667,7 @@ def mySettings():
     budget = 1000000
     slippage = 0.05
 
-    model = 'pearson' # TA, LIGHTGBM, pearson, FASTDTW, ARIMA, GARCH, fourier, sentiment, covid
+    model = 'FASTDTW' # TA, LIGHTGBM, pearson, FASTDTW, ARIMA, GARCH, fourier, sentiment, covid
 
     lookback = 504 # 504
     beginInSample = '20180119' # '20180119'
@@ -715,7 +687,7 @@ def mySettings():
     elif model == 'covid':
         covid_data = pd.read_csv('data/time_series_19-covid-Confirmed.csv')
         del covid_data['Province/State'], covid_data['Lat'], covid_data['Long']
-    elif model == 'Pairs_trade':
+    elif model == 'pearson':
         with open('data/historic_corr.pickle','rb') as f:
             historic_corr = pickle.load(f)
     elif model == 'FASTDTW':
