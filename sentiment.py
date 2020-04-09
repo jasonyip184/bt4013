@@ -19,10 +19,10 @@ from datetime import datetime
 '''
 Generate lexicon by scraping from twitter
 '''
-access_token = "CONCEALED"
-access_token_secret = "CONCEALED"
-consumer_key = "CONCEALED"
-consumer_secret = "CONCEALED"
+access_token = 'hidden'
+access_token_secret = 'hidden'
+consumer_key = 'hidden'
+consumer_secret = 'hidden'
 auth = OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
 api = tweepy.API(auth, wait_on_rate_limit=True, wait_on_rate_limit_notify=True, retry_count=1, retry_delay=5, retry_errors=set([503, 104]))
@@ -96,17 +96,20 @@ for k,v in train_dict.items():
         print(k, length)
 
 dates = train_dict['_date']
-# read VIX data
-f = 'F_VX.txt'
-future_data = pd.read_csv('tickerData/{}'.format(f))
-future_data['DATE'] = future_data['DATE'].apply(lambda x: datetime.strptime(str(x),'%Y%m%d').date())
-future_data = future_data[['DATE','CLOSE']]
-earliest_date = datetime.strptime(dates[30],'%Y%m%d').date()
-train_df = pd.DataFrame.from_dict(train_dict, orient='index').transpose()
-train_df['_date'] = train_df['_date'].apply(lambda x: datetime.strptime(x,'%Y%m%d').date())
-train_df.set_index('_date',inplace=True)
-train_df = train_df.shift(-1) # use yesterday's news to predict today's close
-df = pd.merge(future_data,train_df,how='inner',left_on='DATE',right_on='_date').iloc[1:]
-print(df)
+
+d = {}
+for name in ['F_VX','F_GC','F_FV','F_TU','F_TY','F_US']:
+    f = name + '.txt'
+    future_data = pd.read_csv('tickerData/{}'.format(f))
+    future_data['DATE'] = future_data['DATE'].apply(lambda x: datetime.strptime(str(x),'%Y%m%d').date())
+    future_data = future_data[['DATE','CLOSE']]
+    earliest_date = datetime.strptime(dates[30],'%Y%m%d').date()
+    train_df = pd.DataFrame.from_dict(train_dict, orient='index').transpose()
+    train_df['_date'] = train_df['_date'].apply(lambda x: datetime.strptime(x,'%Y%m%d').date())
+    train_df.set_index('_date',inplace=True)
+    train_df = train_df.shift(-1) # use yesterday's news to predict today's close
+    df = pd.merge(future_data,train_df,how='inner',left_on='DATE',right_on='_date').iloc[1:]
+    d[name] = df
+
 with open('data/trump_train_data.pickle', 'wb') as handle:
-    pickle.dump(df, handle)
+    pickle.dump(d, handle)
